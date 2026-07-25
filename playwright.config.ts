@@ -5,7 +5,8 @@ dotenv.config({ path: ".env.local", quiet: true });
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   use: {
     baseURL: "http://127.0.0.1:3000",

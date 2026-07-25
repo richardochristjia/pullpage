@@ -119,6 +119,16 @@ async function readCatalogGeneration(): Promise<PublicCatalogProduct[]> {
 
 export const getCatalog = cache(readCatalogGeneration);
 
+export async function getCatalogProduct(
+  slug: string,
+  options?: { databaseUrl?: string },
+): Promise<PublicCatalogProduct | null> {
+  const products = options?.databaseUrl
+    ? await listActiveCatalogProducts(options)
+    : await getCatalog();
+  return products.find((product) => product.slug === slug) ?? null;
+}
+
 export async function closeCatalog() {
   await client?.$disconnect();
   client = undefined;

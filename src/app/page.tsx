@@ -1,77 +1,32 @@
 import Image from "next/image";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCatalog, type PublicCatalogProduct } from "@/catalog/catalog";
+import { getCatalog } from "@/catalog/catalog";
+import { CatalogBrowser } from "./catalog-ui";
 import styles from "./catalog.module.css";
-
-const idr = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
-  maximumFractionDigits: 0,
-});
-
-function valueOr(value: string | null, fallback: string) {
-  return value?.trim() || fallback;
-}
-
-function CatalogShelfRow({ product }: { product: PublicCatalogProduct }) {
-  const cardName = valueOr(product.cardName, "No Name");
-  const collectorNumber = valueOr(product.collectorNumber, "Unknown number");
-
-  return (
-    <article className={styles.product} aria-label={`${cardName} ${collectorNumber}`}>
-      <div className={styles.preview} aria-label="Product Preview unavailable">
-        <span className={styles.placeholderMark}>P</span>
-        <strong>Preview coming soon</strong>
-        <small>Pullpage extended art</small>
-      </div>
-      <div className={styles.identity}>
-        <div className={styles.kicker}>
-          <span>{valueOr(product.rarity, "Unknown rarity")}</span>
-          <span>{collectorNumber}</span>
-        </div>
-        <h2>{cardName}</h2>
-        <p className={styles.design}>{valueOr(product.designName, "Untitled design")}</p>
-        <dl className={styles.facts}>
-          <div><dt>Set</dt><dd>{valueOr(product.setName, "Unknown set")}</dd></div>
-          <div><dt>Collector number</dt><dd>{collectorNumber}</dd></div>
-        </dl>
-      </div>
-      <div className={styles.formats}>
-        <p>Available format</p>
-        {product.formatOptions.map((option) => (
-          <div key={option.format} className={styles.formatOption}>
-            <span>{option.format}</span>
-            <strong>{idr.format(option.price)}</strong>
-          </div>
-        ))}
-      </div>
-    </article>
-  );
-}
 
 async function CatalogShelf() {
   await connection();
-  const products = await getCatalog();
-
-  return (
-    <section className={styles.shelf} aria-labelledby="catalog-heading">
-      <div className={styles.shelfHeading}>
-        <div>
-          <p className={styles.eyebrow}>Current collection</p>
-          <h2 id="catalog-heading">Catalog Products</h2>
-        </div>
-        <span>{products.length} {products.length === 1 ? "design" : "designs"}</span>
-      </div>
-      <div className={styles.rows}>
-        {products.map((product) => <CatalogShelfRow key={product.slug} product={product} />)}
-      </div>
-    </section>
-  );
+  return <CatalogBrowser products={await getCatalog()} />;
 }
 
 function CatalogShelfLoading() {
-  return <p role="status" aria-live="polite">Loading Catalog Products…</p>;
+  return (
+    <section className={styles.loadingShelf} aria-labelledby="catalog-loading-heading">
+      <h2 id="catalog-loading-heading">Catalog Products</h2>
+      <p role="status" aria-live="polite">Loading Catalog Products…</p>
+      <div className={styles.browserGrid}>
+        <aside className={styles.sidebar} aria-label="Catalog discovery controls loading">
+          <label className={styles.searchLabel}>
+            <span>Search Catalog Products</span>
+            <input type="search" disabled placeholder="Available when loading finishes" />
+          </label>
+          <p>Filters and sort will be available with the Catalog Products.</p>
+        </aside>
+        <div className={styles.loadingRows} aria-hidden="true"><span /><span /><span /></div>
+      </div>
+    </section>
+  );
 }
 
 export default function Home() {
@@ -87,7 +42,7 @@ export default function Home() {
         />
         <p>Extended art for collectors · Indonesia</p>
       </header>
-      <main>
+      <main id="main-content">
         <section className={styles.intro}>
           <p className={styles.eyebrow}>Pull the art. Own the page.</p>
           <h1>The Pullpage Catalog</h1>

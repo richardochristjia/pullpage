@@ -1,0 +1,8 @@
+.backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; overflow-y: auto; padding: clamp(12px, 4vw, 48px); background: rgb(2 8 18 / 82%); }
+.dialog { position: relative; width: min(980px, 100%); max-height: calc(100vh - 24px); overflow: auto; border-radius: 20px; box-shadow: 0 28px 90px rgb(0 0 0 / 55%); }
+.close { position: absolute; z-index: 2; top: 12px; right: 12px; display: grid; width: 44px; height: 44px; cursor: pointer; place-items: center; border: 1px solid #668097; border-radius: 50%; color: #fff; background: #0b1929; }
+.close:hover { background: #17364b; }
+.close:focus-visible { outline: 3px solid #69d7ef; outline-offset: 3px; }
+.close svg { width: 22px; fill: none; stroke: currentcolor; stroke-linecap: round; stroke-width: 2; }
+@media (prefers-reduced-motion: no-preference) { .backdrop { animation: appear 160ms ease-out; } }
+@keyframes appear { from { opacity: 0; } }

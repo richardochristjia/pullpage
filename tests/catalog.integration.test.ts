@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { Pool } from "pg";
 import { afterAll, describe, expect, test } from "vitest";
-import { closeCatalog, listActiveCatalogProducts } from "@/catalog/catalog";
+import { closeCatalog, getCatalogProduct, listActiveCatalogProducts } from "@/catalog/catalog";
 
 dotenv.config({ path: ".env.local", quiet: true });
 const databaseUrl = process.env.TEST_CATALOG_DATABASE_URL;
@@ -66,6 +66,15 @@ integration("Catalog database seam", () => {
       ]);
       await admin.end();
     }
+  });
+
+  test("looks up an active Catalog Product by immutable slug and distinguishes a successful miss", async () => {
+    const products = await listActiveCatalogProducts({ databaseUrl });
+    const seeded = products.find(({ collectorNumber }) => collectorNumber === "173/165");
+    expect(seeded).toBeDefined();
+
+    expect(await getCatalogProduct(seeded!.slug, { databaseUrl })).toEqual(seeded);
+    expect(await getCatalogProduct("unknown-catalog-product-deadbeef", { databaseUrl })).toBeNull();
   });
 
   test("enforces configured Rarity and every Supported Binder Format price boundary", async () => {

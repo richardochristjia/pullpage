@@ -1,0 +1,24 @@
+.page { min-height: 100vh; color: #f4f7fb; background: #08111f; }
+.pageHeader { display: flex; min-height: 68px; align-items: center; padding: 8px clamp(16px, 4vw, 56px); border-bottom: 1px solid #26364d; background: #0b1626; }
+.pageHeader img { width: 100px; height: auto; }
+.pageMain { width: min(1050px, calc(100% - 32px)); margin: 0 auto; padding: clamp(28px, 6vw, 72px) 0; }
+.detail { display: grid; grid-template-columns: minmax(230px, .7fr) minmax(0, 1fr); overflow: hidden; border: 1px solid #30445e; border-radius: 20px; background: #101d2f; box-shadow: 0 22px 60px rgb(0 0 0 / 28%); }
+.detail > :first-child { min-height: 430px; }
+.content { padding: clamp(24px, 5vw, 58px); }
+.eyebrow { margin: 0 0 9px; color: #66d5ee; font-size: .7rem; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+.content > h1, .content > h2 { margin: 0; overflow-wrap: anywhere; color: #fff; font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1; letter-spacing: -.04em; }
+.identity { margin: 14px 0 0; color: #b7c7d8; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin: 32px 0; }
+.facts div { min-width: 0; }
+.facts dt { color: #8fa3ba; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.facts dd { margin: 5px 0 0; overflow-wrap: anywhere; color: #edf4fa; }
+.options { padding-top: 22px; border-top: 1px solid #304158; }
+.options h2 { margin: 0 0 15px; color: #fff; font-size: 1rem; }
+.options > div { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 20px; color: #d4e0eb; }
+.options strong { color: #75d9ed; font-size: 1.15rem; }
+.shelfLink { display: inline-flex; min-height: 44px; align-items: center; margin-top: 26px; color: #9ae8f6; font-weight: 800; text-underline-offset: 4px; }
+.notFound { display: grid; min-height: calc(100vh - 68px); place-items: center; align-content: center; padding: 32px; color: #c1cedc; text-align: center; background: #08111f; }
+.notFound h1 { margin: 0; color: #fff; font-size: clamp(2rem, 6vw, 4rem); }
+.notFound a { display: inline-flex; min-height: 44px; align-items: center; color: #8ce4f4; font-weight: 800; }
+.loading { min-height: 430px; border: 1px solid #30445e; border-radius: 20px; padding: 32px; background: #101d2f; }
+@media (max-width: 700px) { .detail { grid-template-columns: 1fr; } .detail > :first-child { min-height: 260px; } .facts { grid-template-columns: 1fr; } }
