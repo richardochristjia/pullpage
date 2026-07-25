@@ -28,10 +28,15 @@ runtimeUrl.password = password;
 runtimeUrl.searchParams.delete("options");
 
 let env = await readFile(".env.local", "utf8");
-for (const name of ["CATALOG_DATABASE_URL", "TEST_CATALOG_DATABASE_URL"]) {
-  const line = `${name}=${JSON.stringify(runtimeUrl.toString())}`;
+function setEnv(name, value) {
+  const line = `${name}=${JSON.stringify(value)}`;
   const pattern = new RegExp(`^${name}=.*$`, "m");
   env = pattern.test(env) ? env.replace(pattern, line) : `${env.trimEnd()}\n${line}\n`;
 }
+setEnv("CATALOG_DATABASE_URL", runtimeUrl.toString());
+setEnv("TEST_CATALOG_DATABASE_URL", runtimeUrl.toString());
+if (!process.env.CATALOG_REVALIDATE_SECRET) {
+  setEnv("CATALOG_REVALIDATE_SECRET", randomBytes(32).toString("hex"));
+}
 await writeFile(".env.local", env);
-console.log("Catalog runtime credentials were rotated and saved to .env.local.");
+console.log("Catalog runtime and invalidation credentials were saved to .env.local.");

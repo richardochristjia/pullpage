@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { connection } from "next/server";
-import { listActiveCatalogProducts, type PublicCatalogProduct } from "@/catalog/catalog";
+import { Suspense } from "react";
+import { getCatalog, type PublicCatalogProduct } from "@/catalog/catalog";
 import styles from "./catalog.module.css";
 
 const idr = new Intl.NumberFormat("id-ID", {
@@ -49,10 +50,31 @@ function CatalogShelfRow({ product }: { product: PublicCatalogProduct }) {
   );
 }
 
-export default async function Home() {
+async function CatalogShelf() {
   await connection();
-  const products = await listActiveCatalogProducts();
+  const products = await getCatalog();
 
+  return (
+    <section className={styles.shelf} aria-labelledby="catalog-heading">
+      <div className={styles.shelfHeading}>
+        <div>
+          <p className={styles.eyebrow}>Current collection</p>
+          <h2 id="catalog-heading">Catalog Products</h2>
+        </div>
+        <span>{products.length} {products.length === 1 ? "design" : "designs"}</span>
+      </div>
+      <div className={styles.rows}>
+        {products.map((product) => <CatalogShelfRow key={product.slug} product={product} />)}
+      </div>
+    </section>
+  );
+}
+
+function CatalogShelfLoading() {
+  return <p role="status" aria-live="polite">Loading Catalog Products…</p>;
+}
+
+export default function Home() {
   return (
     <div className={styles.catalog}>
       <header className={styles.header}>
@@ -71,18 +93,9 @@ export default async function Home() {
           <h1>The Pullpage Catalog</h1>
           <p>Extended-art surrounds made to turn a favorite card into a full-page moment.</p>
         </section>
-        <section className={styles.shelf} aria-labelledby="catalog-heading">
-          <div className={styles.shelfHeading}>
-            <div>
-              <p className={styles.eyebrow}>Current collection</p>
-              <h2 id="catalog-heading">Catalog Products</h2>
-            </div>
-            <span>{products.length} {products.length === 1 ? "design" : "designs"}</span>
-          </div>
-          <div className={styles.rows}>
-            {products.map((product) => <CatalogShelfRow key={product.slug} product={product} />)}
-          </div>
-        </section>
+        <Suspense fallback={<CatalogShelfLoading />}>
+          <CatalogShelf />
+        </Suspense>
       </main>
     </div>
   );

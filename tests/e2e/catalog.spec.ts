@@ -1,5 +1,81 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { Pool } from "pg";
+
+const webhookSecret = process.env.CATALOG_REVALIDATE_SECRET;
+
+test("accepts only authenticated Catalog Product invalidation events", async ({ request }) => {
+  expect(webhookSecret).toBeTruthy();
+  const endpoint = "/api/catalog/invalidate";
+  expect((await request.get(endpoint)).status()).toBe(405);
+  expect((await request.post(endpoint, { data: {} })).status()).toBe(401);
+  expect((await request.post(endpoint, {
+    headers: { authorization: `Bearer ${webhookSecret}` },
+    data: { type: "UPDATE", schema: "public", table: "other" },
+  })).status()).toBe(400);
+  expect((await request.post(endpoint, {
+    headers: { authorization: `Bearer ${webhookSecret}` },
+    data: { type: "UPDATE", schema: "catalog_private", table: "catalog_products", tag: "caller-tag" },
+  })).status()).toBe(400);
+  const accepted = await request.post(endpoint, {
+    headers: { authorization: `Bearer ${webhookSecret}` },
+    data: { type: "UPDATE", schema: "catalog_private", table: "catalog_products" },
+  });
+  expect(accepted.status()).toBe(200);
+  expect(await accepted.json()).toEqual({ revalidated: true });
+});
+
+test("publishes a Dashboard-equivalent insert and edit without deployment", async ({ page, request }) => {
+  test.setTimeout(90_000);
+  const adminDatabaseUrl = process.env.SUPABASE_ADMIN_DATABASE_URL;
+  expect(adminDatabaseUrl).toBeTruthy();
+  expect(webhookSecret).toBeTruthy();
+  const admin = new Pool({ connectionString: adminDatabaseUrl });
+  const collectorNumber = `dashboard-${Date.now()}`;
+  const inserted = await admin.query<{ id: string; slug: string }>(
+    `insert into catalog_private.catalog_products
+      (collector_number, design_name, format_code, toploader_price)
+     values ($1, 'Dashboard Rehearsal', 'TL', 120000)
+     returning id, slug`,
+    [collectorNumber],
+  );
+  const event = (type: "INSERT" | "UPDATE" | "DELETE") => request.post("/api/catalog/invalidate", {
+    headers: { authorization: `Bearer ${webhookSecret}` },
+    data: { type, schema: "catalog_private", table: "catalog_products" },
+  });
+
+  try {
+    expect((await event("INSERT")).status()).toBe(200);
+    await page.goto("/");
+    const insertedRow = page.getByRole("article", { name: `No Name ${collectorNumber}` });
+    await expect(insertedRow).toContainText("Unknown set", { timeout: 60_000 });
+    await expect(insertedRow).toContainText("Unknown rarity");
+    await expect(insertedRow).toContainText("Toploader");
+    await expect(insertedRow).toContainText(/Rp\s?120\.000/);
+
+    const edited = await admin.query<{ slug: string }>(
+      `update catalog_private.catalog_products
+       set card_name = 'Dashboard Eevee', set_name = 'Dashboard Set', rarity_code = 'SR',
+           format_code = 'ALL', binder_sleeve_price = 95000
+       where id = $1 returning slug`,
+      [inserted.rows[0].id],
+    );
+    expect(edited.rows[0].slug).toBe(inserted.rows[0].slug);
+
+    await expect(async () => {
+      await page.reload();
+      const editedRow = page.getByRole("article", { name: `Dashboard Eevee ${collectorNumber}` });
+      await expect(editedRow).toContainText("Dashboard Set");
+      await expect(editedRow).toContainText("SR");
+      await expect(editedRow).toContainText("Binder Sleeve");
+      await expect(editedRow).toContainText(/Rp\s?95\.000/);
+    }).toPass({ timeout: 60_000, intervals: [1_000] });
+  } finally {
+    await admin.query("delete from catalog_private.catalog_products where id = $1", [inserted.rows[0].id]);
+    await event("DELETE");
+    await admin.end();
+  }
+});
 
 test("renders the seeded Catalog Product through the database-to-shelf path", async ({ page, request }) => {
   const browserRequests: string[] = [];

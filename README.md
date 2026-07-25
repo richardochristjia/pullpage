@@ -31,11 +31,17 @@ Provision the least-privilege runtime login:
 npm run db:provision-runtime
 ```
 
-This generates and installs a random password for `catalog_runtime`, then writes `CATALOG_DATABASE_URL` and `TEST_CATALOG_DATABASE_URL` to the ignored `.env.local`. It never prints the password. Run it again to rotate the runtime credential.
+This generates and installs a random password for `catalog_runtime`, then writes `CATALOG_DATABASE_URL` and `TEST_CATALOG_DATABASE_URL` to the ignored `.env.local`. It also creates `CATALOG_REVALIDATE_SECRET` when absent. It never prints either secret. Run it again to rotate the runtime credential.
 
 Start the application with `npm run dev` and open <http://localhost:3000>.
 
-The runtime identity can select only from `catalog_public.active_catalog_products`; it cannot read or write tables in `catalog_private`.
+The runtime identity can select only from `catalog_public.active_catalog_products` and `catalog_public.catalog_rarities`; it cannot read or write tables in `catalog_private`.
+
+The complete public projection uses one shared remote `catalog` cache generation with 30-second stale/revalidation and 60-second expiry values. Configure the Supabase Database Webhook described in [the Catalog Editor guide](docs/catalog-editor-guide.md) to expire it immediately after accepted product changes.
+
+## Catalog editing
+
+Follow [Catalog Editor: Edit → Save → Verify](docs/catalog-editor-guide.md). The guide covers fields, actionable database errors, generated slugs, public verification, ambiguous saves, and the required non-developer rehearsal.
 
 ## Validation
 
