@@ -1,0 +1,41 @@
+# Extended-Art Catalog
+
+The language used to describe the business's static catalog of extended-art products for Pokémon card binders.
+
+## Language
+
+**Catalog Product**:
+One sellable extended-art design made for one specific Pokémon card depiction, regardless of how many physical copies exist. Its set may be unidentified.
+_Avoid_: Listing, stock item
+
+**Card Name**:
+The optional customer-facing name for the depicted card, displayed exactly as supplied rather than constrained to an official Pokémon naming source. A missing or blank value is presented as `No Name`.
+_Avoid_: Pokémon species field, normalized official name
+
+**Collector Number**:
+The optional identifying number printed on the Pokémon card, such as `203/165`; a missing value is presented as `Unknown number`.
+_Avoid_: Card code, set code
+
+**Set Name**:
+The official Pokémon expansion containing the depicted card when it can be identified; it may be unknown.
+_Avoid_: Assuming Collector Number is globally unique
+
+**Rarity**:
+The optional Pokémon card rarity classification. Its controlled order from lower to higher is `C`, `U`, `R`, `RR`, `AR`, `SR`, `SAR`, and `UR`; a missing value is presented as `Unknown rarity`.
+_Avoid_: Card type
+
+**Supported Binder Formats**:
+The formats in which a Catalog Product is available: Binder Sleeve, Toploader, or both.
+_Avoid_: Standard Binder, fgToploader, toploader flag
+
+**Format Option**:
+A supported binder format together with that format’s price. Every Catalog Product has at least one Format Option; Binder Sleeve and Toploader prices may differ, and all prices are denominated in Indonesian rupiah (IDR).
+_Avoid_: Toploader flag, single product price
+
+**Design Name**:
+An optional customer-visible name distinguishing an extended-art design. When multiple Catalog Products target the same card, each has a distinct Design Name.
+_Avoid_: Variant, binder format
+
+**Product Preview**:
+An optional thumbnail showing the finished presentation of the Pokémon card together with its extended-art surround. A missing or unavailable external image URL is replaced by a branded Pullpage placeholder.
+_Avoid_: Raw artwork, card image

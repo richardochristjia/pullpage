@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prototype:catalog": "node -e \"require('fs').copyFileSync('C:/Users/174818.RICHARDO/Downloads/pullpage_logo.png','public/pullpage_logo.png')\" && next dev"
   },
   "dependencies": {
     "next": "16.2.10",
