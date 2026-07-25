@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### Issue tracker
 
-Issues are tracked as local Markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+Specs (PRDs), implementation tickets, and workflow state are tracked in GitHub Issues. Do not create local planning files. See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 
