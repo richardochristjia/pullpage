@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
 
 # next.js
 /.next/
@@ -35,6 +38,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# generated clients
+/src/generated/prisma/
 
 # typescript
 *.tsbuildinfo

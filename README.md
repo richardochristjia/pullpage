@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pullpage Catalog
 
-## Getting Started
+A server-rendered Catalog of Pullpage extended-art products backed by hosted Supabase PostgreSQL.
 
-First, run the development server:
+## Hosted Supabase setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Use a dedicated development/test Supabase project, not a database containing production customer data.
+
+Requirements: Node.js and npm. Docker is not required.
+
+```sh
+npm install
+npx supabase login
+npx supabase link --project-ref <project-ref>
+npm run db:push:dry-run
+npm run db:push
+npm run prisma:generate
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`db:push` applies pending migrations and the deterministic synthetic seed. It does not reset or delete the hosted database.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy the project's **Session pooler** connection string into `.env.local` as the admin connection, replacing the password placeholder locally:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```dotenv
+SUPABASE_ADMIN_DATABASE_URL="postgresql://postgres.<project-ref>:<url-encoded-database-password>@<pooler-host>:5432/postgres"
+```
 
-## Learn More
+Provision the least-privilege runtime login:
 
-To learn more about Next.js, take a look at the following resources:
+```sh
+npm run db:provision-runtime
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This generates and installs a random password for `catalog_runtime`, then writes `CATALOG_DATABASE_URL` and `TEST_CATALOG_DATABASE_URL` to the ignored `.env.local`. It never prints the password. Run it again to rotate the runtime credential.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Start the application with `npm run dev` and open <http://localhost:3000>.
 
-## Deploy on Vercel
+The runtime identity can select only from `catalog_public.active_catalog_products`; it cannot read or write tables in `catalog_private`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Validation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run test:integration
+npm run test:production
+```
+
+Install Playwright's Chromium once with `npx playwright install chromium` before running browser tests.
+
+`npm run build` deliberately needs no database credential. Database access begins only when a request dynamically renders the Catalog route.
+
+## Optional local Supabase
+
+The `db:start`, `db:reset`, `db:lint`, and `db:stop` scripts use the local Supabase stack and therefore require Docker. They are not needed for the hosted workflow above.

@@ -3,25 +3,49 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "prototype:catalog": "node -e \"require('fs').copyFileSync('C:/Users/174818.RICHARDO/Downloads/pullpage_logo.png','public/pullpage_logo.png')\" && next dev"
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:lint": "supabase db lint --local",
+    "test": "vitest run",
+    "test:integration": "node scripts/require-env.mjs TEST_CATALOG_DATABASE_URL && vitest run tests/catalog.integration.test.ts",
+    "test:e2e": "node scripts/require-env.mjs CATALOG_DATABASE_URL && playwright test",
+    "test:production": "node scripts/require-env.mjs CATALOG_DATABASE_URL && npm run build && playwright test",
+    "db:push": "supabase db push --linked --include-seed",
+    "db:push:dry-run": "supabase db push --linked --include-seed --dry-run",
+    "db:provision-runtime": "node scripts/provision-catalog-runtime.mjs"
   },
   "dependencies": {
-    "next": "16.2.10",
+    "@prisma/adapter-pg": "7.9.0",
+    "@prisma/client": "7.9.0",
+    "dotenv": "17.3.1",
+    "next": "16.2.11",
+    "pg": "8.16.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@playwright/test": "1.62.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.2.11",
+    "prisma": "7.9.0",
+    "supabase": "2.109.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.10"
   }
 }
