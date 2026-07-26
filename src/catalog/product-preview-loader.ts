@@ -6,6 +6,10 @@ export type ProductPreviewLoaderParameters = {
 
 const VERSIONED_CLOUDINARY_PREVIEW = /^https:\/\/res[.]cloudinary[.]com\/[a-z0-9_-]+\/image\/upload\/(v[1-9][0-9]*\/catalog-products\/[^?#]+[.](?:avif|gif|jpe?g|png|webp))$/;
 
+export function isVersionedCloudinaryProductPreview(value: string) {
+  return VERSIONED_CLOUDINARY_PREVIEW.test(value);
+}
+
 export function productPreviewLoader({ src, width }: ProductPreviewLoaderParameters) {
   const match = VERSIONED_CLOUDINARY_PREVIEW.exec(src);
   if (!match || !Number.isInteger(width) || width <= 0) {

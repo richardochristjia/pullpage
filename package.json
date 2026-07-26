@@ -18,6 +18,7 @@
     "test:integration": "node scripts/require-env.mjs TEST_CATALOG_DATABASE_URL && vitest run tests/catalog.integration.test.ts",
     "test:e2e": "node scripts/require-env.mjs CATALOG_DATABASE_URL SUPABASE_ADMIN_DATABASE_URL CATALOG_REVALIDATE_SECRET && playwright test",
     "test:production": "node scripts/require-env.mjs CATALOG_DATABASE_URL SUPABASE_ADMIN_DATABASE_URL CATALOG_REVALIDATE_SECRET && node scripts/test-production.mjs",
+    "test:resilience": "node scripts/require-env.mjs CATALOG_QUALIFICATION_ORIGINS SUPABASE_ADMIN_DATABASE_URL CATALOG_REVALIDATE_SECRET && node scripts/qualify-catalog-resilience.mjs",
     "db:push": "supabase db push --linked --include-seed",
     "db:push:dry-run": "supabase db push --linked --include-seed --dry-run",
     "db:provision-runtime": "node scripts/provision-catalog-runtime.mjs"

@@ -23,6 +23,7 @@ test("accepts only authenticated fixed-scope Catalog invalidation events", async
       data: { type: "UPDATE", schema: "catalog_private", table },
     });
     expect(accepted.status()).toBe(200);
+    expect(accepted.headers()["x-correlation-id"]).toMatch(/^[a-f0-9-]{36}$/);
     expect(await accepted.json()).toEqual({ revalidated: true });
   }
 });

@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: "npm run start",
-    url: "http://127.0.0.1:3000",
+    url: "http://127.0.0.1:3000/robots.txt",
     reuseExistingServer: false,
     env: { VERCEL_ENV: "production" },
   },

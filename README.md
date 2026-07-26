@@ -37,13 +37,17 @@ Start the application with `npm run dev` and open <http://localhost:3000>.
 
 The runtime identity can select only from `catalog_public.active_catalog_products` and `catalog_public.catalog_rarities`; it cannot read or write Catalog Product, Product Preview rights, or environment configuration tables in `catalog_private`.
 
-The complete public projection uses one shared remote `catalog` cache generation with 30-second stale/revalidation and 60-second expiry values. Metadata and the runtime sitemap consume that same generation. Configure the fixed-scope Supabase Database Webhooks described in [the Catalog Editor guide](docs/catalog-editor-guide.md) to expire it immediately after accepted product, rights, or preview-configuration changes.
+The complete public projection uses one shared remote current `catalog` generation with 30-second stale/revalidation and 60-second idle-expiry values. Metadata and the runtime sitemap consume that same generation. A separately retained whole-generation safety copy prevents a failed refresh from becoming empty, partial, mixed, or mass not-found output. Configure the fixed-scope Supabase Database Webhooks described in [the Catalog Editor guide](docs/catalog-editor-guide.md) to expire the current generation immediately after accepted product, rights, or preview-configuration changes.
 
 Canonical and shared links always use `https://pullpage.vercel.app`, including Preview deployments. Vercel Production (`VERCEL_ENV=production`) permits indexing; Preview, development, and other environments emit `noindex, nofollow` and disallow crawling. Search-engine recrawl and third-party social-card cache timing are external and have no 60-second guarantee.
 
 ## Catalog editing
 
 Follow [Catalog Editor: Edit → Save → Verify](docs/catalog-editor-guide.md). The guide covers fields, actionable database errors, generated slugs, reversible archive/restore, public verification, ambiguous saves, and the required non-developer rehearsals. Routine Catalog Editors never hard-delete Catalog Products.
+
+## Resilience operations
+
+Follow the [Catalog resilience runbook](docs/catalog-resilience-runbook.md) for bounded connection settings, structured telemetry, alert rules, database/cache incidents, manual recovery, and retained fault/load/freshness qualification.
 
 ## Validation
 

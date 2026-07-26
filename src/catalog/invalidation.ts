@@ -1,6 +1,6 @@
 import "server-only";
 
-import { timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { CATALOG_CACHE_TAG } from "./catalog";
 
@@ -49,6 +49,21 @@ export async function invalidateCatalog(request: Request) {
   }
 
   revalidateTag(CATALOG_CACHE_TAG, { expire: 0 });
-  console.info("Accepted Catalog cache invalidation event");
-  return Response.json({ revalidated: true });
+  const correlationId = randomUUID();
+  const acceptedEvent = event as Record<string, unknown>;
+  const committedAt = typeof acceptedEvent.commit_timestamp === "string"
+    ? Date.parse(acceptedEvent.commit_timestamp)
+    : Number.NaN;
+  console.info(JSON.stringify({
+    event: "catalog.webhook.accepted",
+    occurredAt: new Date().toISOString(),
+    correlationId,
+    result: "success",
+    table: acceptedEvent.table,
+    webhookLagMs: Number.isFinite(committedAt) ? Math.max(0, Date.now() - committedAt) : null,
+  }));
+  return Response.json(
+    { revalidated: true },
+    { headers: { "x-correlation-id": correlationId } },
+  );
 }
