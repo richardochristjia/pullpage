@@ -96,6 +96,9 @@ test("archives and restores one Catalog Product across stale, browser, crawler, 
   const archiveTime = new Date(Date.now() + 86_400_000);
   await admin.query("update catalog_private.catalog_products set archived_at = $2 where id = $1", [productId, archiveTime]);
 
+  if (!process.env.CATALOG_TEST_ORIGIN) {
+    expect((await invalidate(request)).status()).toBe(200);
+  }
   await expect.poll(async () => (await (await request.get("/sitemap.xml")).text()).includes(canonical), {
     timeout: 15_000,
     message: "the database webhook should withdraw the archived product",

@@ -1,0 +1,63 @@
+{
+  "recordedAt": "2026-07-26T15:20:00.000Z",
+  "releaseCandidateCommit": "96e9952",
+  "environmentInventory": {
+    "supabaseOrganizationRef": "sauhnywffljvqusyyhnb",
+    "previewProjectRef": "kvujpjcnjswrylgvwxwo",
+    "productionProjectRef": "vozvldzmzfdohusojrfq",
+    "pausedRollbackProjectRef": "wlcvenguunxriujstgxs",
+    "supabaseRegion": "ap-southeast-1",
+    "vercelProjectId": "prj_SElJFachKIEFvLh8WtReY4HmdMYN",
+    "vercelProductionDeploymentId": "dpl_2PpvNVkyT58HbuddC6vwMyF56n4j",
+    "vercelPreviewDeploymentId": "dpl_A7BbYLKtvsvB9RARfsoPsfcAiz88",
+    "vercelRuntimeRegion": "sin1"
+  },
+  "migrationHistory": {
+    "migrationCount": 17,
+    "fromZeroPreview": true,
+    "fromZeroProduction": true,
+    "manifestAlgorithm": "sha256",
+    "schemaLintErrors": 0,
+    "prismaGenerationDeterministic": true
+  },
+  "previewQualification": {
+    "syntheticProducts": 501,
+    "activeProjectionProducts": 480,
+    "qualifiedProjectionProducts": 500,
+    "rarities": 8,
+    "formats": ["BS", "TL", "ALL"],
+    "coversMissingFacts": true,
+    "coversDuplicateDepictions": true,
+    "coversArchive": true,
+    "coversRights": true,
+    "integrationTests": 19,
+    "browserTests": ["archive/restore", "local discovery", "500-product accessibility", "crawler HTML", "recovery", "fixed-scope invalidation"]
+  },
+  "productionTransfer": {
+    "editFreeze": true,
+    "sourcePublicProducts": 1,
+    "targetPublicProducts": 1,
+    "sourceJournalEntries": 1128,
+    "targetJournalEntriesAtTransfer": 1128,
+    "publicFactsEqual": true,
+    "journalCountEqual": true,
+    "encryptedIndependentSnapshotVerified": true,
+    "snapshotKeyStoredSeparately": true,
+    "providerPitr": "unavailable on free plan",
+    "rollbackProjectState": "paused"
+  },
+  "runtime": {
+    "productionPublicOrigin": "https://pullpage.vercel.app",
+    "productionHttpStatus": 200,
+    "productionCrawlAllowed": true,
+    "previewNoindex": true,
+    "automaticWebhookVerified": true,
+    "productionPoolMaximum": 1,
+    "migrationCredentialsInVercel": false
+  },
+  "approvals": {
+    "ownerApprovedFreePlanStagedCutover": true,
+    "destructiveSchemaChanges": false,
+    "futureDestructiveWorkRequiresDistinctSecondApprover": true
+  }
+}

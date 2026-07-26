@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { assertCatalogDatabaseOperation, validateCatalogCredential, validateCatalogEnvironments, type CatalogEnvironmentInventory } from "@/catalog/environment-policy";
+import committedInventory from "../config/catalog-environments.json";
 
 const inventory = (): CatalogEnvironmentInventory => ({
   runtimeRegion: "sin1",
@@ -13,6 +14,7 @@ const inventory = (): CatalogEnvironmentInventory => ({
 describe("Catalog environment policy", () => {
   test("accepts three isolated environments in the Singapore promotion path", () => {
     expect(validateCatalogEnvironments(inventory())).toEqual({ valid: true });
+    expect(validateCatalogEnvironments(committedInventory as CatalogEnvironmentInventory)).toEqual({ valid: true });
   });
 
   test("rejects reused hosted identities, secrets, or Production seeding", () => {

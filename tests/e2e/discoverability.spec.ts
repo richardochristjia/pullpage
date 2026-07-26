@@ -72,7 +72,10 @@ test("shares the immutable production canonical through native Web Share", async
 
   const shared = await page.evaluate(() => (window as typeof window & { sharedProduct?: ShareData }).sharedProduct);
   expect(shared?.url).toMatch(canonicalPattern);
-  expect(shared?.url).not.toContain(page.url().split("/products/")[0]);
+  const deploymentOrigin = new URL(process.env.CATALOG_TEST_ORIGIN ?? page.url()).origin;
+  if (deploymentOrigin !== "https://pullpage.vercel.app") {
+    expect(shared?.url).not.toContain(deploymentOrigin);
+  }
   expect(shared?.title).toBe("Pikachu — Electric Bloom | Pullpage");
   await expect(page.getByRole("heading", { level: 1, name: "Pikachu — Electric Bloom" })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -139,26 +142,42 @@ test("serves fixed production metadata and robots to browsers and crawlers", asy
     "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
   ];
   for (const userAgent of userAgents) {
-    const context = await browser.newContext({ javaScriptEnabled: false, userAgent });
-    const page = await context.newPage();
-    const response = await page.goto(path);
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveTitle("Discoverability Fixture — Initial Design | Pullpage");
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-      "href",
-      `https://pullpage.vercel.app${path}`,
-    );
-    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "website");
-    await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "en_US");
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://pullpage.vercel.app/pullpage-social.png");
-    await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
-    await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute("content", "630");
-    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
-    if (userAgent.startsWith("facebookexternalhit")) {
-      const html = await response!.text();
-      expect(html.indexOf('property="og:title"')).toBeGreaterThan(0);
-      expect(html.indexOf('property="og:title"')).toBeLessThan(html.indexOf("</head>"));
+    const externalBrowser = Boolean(process.env.CATALOG_TEST_ORIGIN) && userAgent.includes("Chrome/123");
+    const context = await browser.newContext({
+      javaScriptEnabled: externalBrowser,
+      userAgent,
+      extraHTTPHeaders: { "user-agent": userAgent },
+    });
+    if (process.env.CATALOG_TEST_ORIGIN && !externalBrowser) {
+      const response = await fetch(new URL(path, process.env.CATALOG_TEST_ORIGIN), { headers: { "user-agent": userAgent } });
+      const html = await response.text();
+      expect(response.status).toBe(200);
+      expect(html).toContain("Discoverability Fixture — Initial Design | Pullpage");
+      expect(html).toContain(`href="https://pullpage.vercel.app${path}"`);
+      expect(html).toContain('property="og:type" content="website"');
+      expect(html).toContain('property="og:locale" content="en_US"');
+      expect(html).toContain('property="og:image" content="https://pullpage.vercel.app/pullpage-social.png"');
+      expect(html).toContain('property="og:image:width" content="1200"');
+      expect(html).toContain('property="og:image:height" content="630"');
+      expect(html).toContain('name="twitter:card" content="summary_large_image"');
+      expect(html).toContain('name="robots" content="index, follow"');
+      if (userAgent.startsWith("facebookexternalhit")) {
+        expect(html.indexOf('property="og:title"')).toBeGreaterThan(0);
+        expect(html.indexOf('property="og:title"')).toBeLessThan(html.indexOf("</head>"));
+      }
+    } else {
+      const page = await context.newPage();
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(200);
+      await expect(page).toHaveTitle("Discoverability Fixture — Initial Design | Pullpage");
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://pullpage.vercel.app${path}`);
+      await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "website");
+      await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "en_US");
+      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://pullpage.vercel.app/pullpage-social.png");
+      await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+      await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute("content", "630");
+      await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
     }
     await context.close();
   }

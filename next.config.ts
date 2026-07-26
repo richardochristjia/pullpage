@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  htmlLimitedBots: /Googlebot|bingbot|Twitterbot|Slackbot/i,
+  htmlLimitedBots: /Googlebot|bingbot|Twitterbot|Slackbot|facebookexternalhit/i,
   cacheLife: {
     catalog: {
       stale: 30,
