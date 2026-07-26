@@ -1,6 +1,6 @@
 # Catalog Editor: Edit → Save → Verify
 
-Use this workflow in the dedicated non-production project before working in Production. Routine Catalog Editors use **Table Editor**, never SQL Editor, CSV import, DELETE, or schema controls.
+Use this workflow in the dedicated non-production project before working in Production. Routine Catalog Editors use **Table Editor**, never SQL Editor, CSV import, DELETE, or schema controls. Supabase project owners are privileged recovery administrators, not routine Catalog Editors; shared accounts are prohibited.
 
 ## Before saving
 
@@ -70,6 +70,8 @@ If the old state remains before convergence, do not save again: clients and shar
 4. In a fresh browser, allow up to 60 seconds and record UTC evidence that the same slug appears on the shelf and in local search, opens as a canonical page and intercepted modal, has current metadata, and returns to `/sitemap.xml` with its Product Preview image only when rights are current.
 
 The Preview rehearsal must be completed by a non-developer using Table Editor only. Retain before/after screenshots, immutable UUID and slug, reason, operator, archive and restore UTC times, rejected-restoration correction evidence, webhook/convergence times, and every public verification above. No developer intervention, SQL, or deletion is part of the rehearsal.
+
+Successful inserts, edits, archives, and restores are recorded automatically in the private append-only journal; rejected saves and rolled-back transactions are not. Editors cannot use that evidence as an undo button. A Catalog Maintainer follows the [Catalog audit and recovery runbook](catalog-recovery-runbook.md) for reviewed targeted correction. Exceptional hard deletion is never an editor workflow.
 
 ## Ambiguous Save result
 

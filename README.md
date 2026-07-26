@@ -45,6 +45,10 @@ Canonical and shared links always use `https://pullpage.vercel.app`, including P
 
 Follow [Catalog Editor: Edit → Save → Verify](docs/catalog-editor-guide.md). The guide covers fields, actionable database errors, generated slugs, reversible archive/restore, public verification, ambiguous saves, and the required non-developer rehearsals. Routine Catalog Editors never hard-delete Catalog Products.
 
+## Recovery operations
+
+Every successful Catalog Product mutation has a transactionally consistent private before/after journal entry. Follow the [Catalog audit and recovery runbook](docs/catalog-recovery-runbook.md) for targeted correction, exceptional controlled deletion, encrypted independent exports, isolated restore verification, approvals, and evidence. Paid Supabase PITR and Platform Audit Logs remain deferred on the free plan.
+
 ## Resilience operations
 
 Follow the [Catalog resilience runbook](docs/catalog-resilience-runbook.md) for bounded connection settings, structured telemetry, alert rules, database/cache incidents, manual recovery, and retained fault/load/freshness qualification.
