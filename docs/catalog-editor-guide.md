@@ -42,9 +42,11 @@ In a fresh browser session, allow up to 60 seconds under healthy operation and v
 2. Missing values show `No Name`, `Unknown number`, `Unknown set`, and `Unknown rarity` only in the UI.
 3. Only selected Format Options appear with the correct IDR prices.
 4. The generated slug remains unchanged after an edit.
-5. No deployment or rebuild occurred.
+5. The canonical page title, description, Product Preview social image or Pullpage fallback, and share action use the production `https://pullpage.vercel.app/products/<slug>` URL.
+6. `/sitemap.xml` contains the active canonical and includes the Product Preview image URL only while its rights are current.
+7. No deployment or rebuild occurred.
 
-If the old state remains after 60 seconds, stop editing and ask the Catalog Maintainer to check the persisted row, webhook delivery, and Catalog refresh. Do not save repeatedly.
+If the old state remains after 60 seconds, stop editing and ask the Catalog Maintainer to check the persisted row, webhook delivery, and Catalog refresh. Do not save repeatedly. The 60-second target covers Pullpage-controlled responses only: search engines and social platforms choose their own recrawl and cached-card refresh timing, with no 60-second guarantee.
 
 ## Ambiguous Save result
 

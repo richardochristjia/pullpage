@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
+import { productDiscoverability } from "@/catalog/discoverability";
 import { displayCatalogValue } from "@/catalog/presentation";
 import { ProductPreview } from "./product-preview";
+import { ShareProduct } from "./share-product";
 import styles from "./product-detail.module.css";
 
 const idr = new Intl.NumberFormat("id-ID", {
@@ -21,6 +23,7 @@ export function ProductDetail({ product, headingId, modal = false }: {
   modal?: boolean;
 }) {
   const Heading = modal ? "h2" : "h1";
+  const discoverability = productDiscoverability(product);
   return (
     <article className={styles.detail}>
       <ProductPreview
@@ -46,6 +49,7 @@ export function ProductDetail({ product, headingId, modal = false }: {
             <div key={option.format}><span>{option.format}</span><strong>{idr.format(option.price)}</strong></div>
           ))}
         </section>
+        <ShareProduct canonical={discoverability.canonical} title={discoverability.documentTitle} />
         <Link className={styles.shelfLink} href="/">Back to the Catalog shelf</Link>
       </div>
     </article>

@@ -3,8 +3,11 @@ import { Suspense } from "react";
 import { getCatalogProduct } from "@/catalog/catalog";
 import { ProductDetail } from "@/app/product-detail";
 import { ProductModal } from "@/app/modal";
+import { generateCatalogProductMetadata } from "@/catalog/product-metadata";
 
 type ProductPageProps = { params: Promise<{ slug: string }> };
+
+export const generateMetadata = generateCatalogProductMetadata;
 
 async function ModalContent({ params }: ProductPageProps) {
   const { slug } = await params;

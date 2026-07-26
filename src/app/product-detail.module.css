@@ -16,7 +16,15 @@
 .options h2 { margin: 0 0 15px; color: #fff; font-size: 1rem; }
 .options > div { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 20px; color: #d4e0eb; }
 .options strong { color: #75d9ed; font-size: 1.15rem; }
-.shelfLink { display: inline-flex; min-height: 44px; align-items: center; margin-top: 26px; color: #9ae8f6; font-weight: 800; text-underline-offset: 4px; }
+.share { margin-top: 24px; }
+.share button { display: inline-flex; min-height: 44px; align-items: center; gap: 9px; cursor: pointer; border: 1px solid #4e9db0; border-radius: 10px; padding: 9px 14px; color: #f4fbfd; font-weight: 800; background: #15394a; }
+.share button:hover { background: #1c4a5e; }
+.share button:focus-visible, .share input:focus-visible { outline: 3px solid #69d7ef; outline-offset: 3px; }
+.share svg { width: 20px; height: 20px; fill: none; stroke: currentcolor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.shareStatus { min-height: 1.5em; margin: 8px 0 0; color: #c6d7e4; font-size: .88rem; }
+.shareRecovery { display: grid; gap: 7px; margin-top: 12px; color: #e7f0f6; font-size: .88rem; font-weight: 700; }
+.shareRecovery input { width: 100%; min-height: 44px; border: 1px solid #59728b; border-radius: 8px; padding: 9px 11px; color: #fff; background: #081421; }
+.shelfLink { display: inline-flex; min-height: 44px; align-items: center; margin-top: 18px; color: #9ae8f6; font-weight: 800; text-underline-offset: 4px; }
 .notFound { display: grid; min-height: calc(100vh - 68px); place-items: center; align-content: center; padding: 32px; color: #c1cedc; text-align: center; background: #08111f; }
 .notFound h1 { margin: 0; color: #fff; font-size: clamp(2rem, 6vw, 4rem); }
 .notFound a { display: inline-flex; min-height: 44px; align-items: center; color: #8ce4f4; font-weight: 800; }
