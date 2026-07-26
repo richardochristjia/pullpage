@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { assertCatalogDatabaseOperation, validateCatalogCredential, validateCatalogEnvironments, type CatalogEnvironmentInventory } from "@/catalog/environment-policy";
+import { assertCatalogDatabaseOperation, assertSyntheticSeedTarget, validateCatalogCredential, validateCatalogEnvironments, type CatalogEnvironmentInventory } from "@/catalog/environment-policy";
 import committedInventory from "../config/catalog-environments.json";
 
 const inventory = (): CatalogEnvironmentInventory => ({
@@ -29,6 +29,19 @@ describe("Catalog environment policy", () => {
     expect(validateCatalogCredential("postgresql://catalog_runtime:secret@pool.invalid:6543/postgres?sslmode=require&connect_timeout=10&statement_timeout=10000", "runtime")).toEqual({ valid: true });
     expect(() => validateCatalogCredential("postgresql://postgres:secret@pool.invalid:5432/postgres", "runtime")).toThrow(/TLS.*connect_timeout.*statement_timeout.*catalog_runtime/i);
     expect(() => validateCatalogCredential("postgresql://catalog_runtime:secret@pool.invalid:6543/postgres?sslmode=require&connect_timeout=10&statement_timeout=10000", "migration")).toThrow(/migration identity/i);
+  });
+
+  test("refuses synthetic fixtures when a Preview label points at known Production", () => {
+    expect(assertSyntheticSeedTarget({
+      environment: "preview",
+      databaseUrl: "postgresql://postgres.preview-ref:secret@pool.invalid:5432/postgres",
+      inventory: inventory(),
+    })).toEqual({ allowed: true });
+    expect(() => assertSyntheticSeedTarget({
+      environment: "preview",
+      databaseUrl: "postgresql://postgres.production-ref:secret@pool.invalid:5432/postgres",
+      inventory: inventory(),
+    })).toThrow(/known Production/i);
   });
 
   test("permits destructive development commands only against local Supabase", () => {

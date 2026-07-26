@@ -1,16 +1,18 @@
 import dotenv from "dotenv";
+import { readFileSync } from "node:fs";
 import pg from "pg";
 import { buildSyntheticCatalogFixtures } from "../src/catalog/synthetic-fixtures.ts";
-import { assertCatalogDatabaseOperation } from "../src/catalog/environment-policy.ts";
+import { assertSyntheticSeedTarget, type CatalogEnvironmentInventory } from "../src/catalog/environment-policy.ts";
 
 dotenv.config({ path: ".env.promotion.local", quiet: true });
 dotenv.config({ path: ".env.local", quiet: true });
 const environment = process.env.CATALOG_SEED_ENVIRONMENT;
 if (environment !== "local" && environment !== "preview" && environment !== "production") throw new Error("CATALOG_SEED_ENVIRONMENT must identify local, preview, or production");
-assertCatalogDatabaseOperation({ operation: "seed", environment });
 if (process.env.CATALOG_ALLOW_SYNTHETIC_SEED !== "true") throw new Error("CATALOG_ALLOW_SYNTHETIC_SEED=true is required");
 const databaseUrl = environment === "preview" ? process.env.PREVIEW_MIGRATION_DATABASE_URL : process.env.LOCAL_MIGRATION_DATABASE_URL;
 if (!databaseUrl) throw new Error(`The ${environment} synthetic seed database URL is required`);
+const inventory = JSON.parse(readFileSync("config/catalog-environments.json", "utf8")) as CatalogEnvironmentInventory;
+assertSyntheticSeedTarget({ environment, databaseUrl, inventory });
 
 const fixtures = buildSyntheticCatalogFixtures();
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10_000 });
@@ -22,6 +24,8 @@ try {
     insert into catalog_private.product_preview_configuration (singleton, environment_name, cloud_name, asset_folder)
     values (true, $1, $2, $3)
     on conflict (singleton) do update set environment_name=excluded.environment_name, cloud_name=excluded.cloud_name, asset_folder=excluded.asset_folder, updated_at=statement_timestamp()
+    where (product_preview_configuration.environment_name, product_preview_configuration.cloud_name, product_preview_configuration.asset_folder)
+      is distinct from (excluded.environment_name, excluded.cloud_name, excluded.asset_folder)
   `, [fixtures.configuration.environmentName, fixtures.configuration.cloudName, fixtures.configuration.assetFolder]);
   const rights = fixtures.approvedRights;
   await client.query(`
@@ -32,7 +36,21 @@ try {
     ) values ($1,$2,'synthetic-preview','Generated fixture','Pullpage fixture generator','Pullpage fixture generator',
       'Synthetic non-production fixture','No private evidence; generated test fixture',array['preview'],array['test'],false,
       date '2026-01-01','approved','Synthetic fixture generator',timestamptz '2026-01-01 00:00:00+00')
-    on conflict (id) do update set status=excluded.status
+    on conflict (id) do update set
+      exact_versioned_url=excluded.exact_versioned_url, asset_identifier=excluded.asset_identifier,
+      source=excluded.source, creator_photographer=excluded.creator_photographer, owner_licensor=excluded.owner_licensor,
+      permission_basis=excluded.permission_basis, permission_evidence=excluded.permission_evidence,
+      channels=excluded.channels, territories=excluded.territories, attribution_required=excluded.attribution_required,
+      effective_on=excluded.effective_on, status=excluded.status, reviewer=excluded.reviewer, reviewed_at=excluded.reviewed_at
+    where (product_preview_rights.exact_versioned_url, product_preview_rights.asset_identifier,
+      product_preview_rights.source, product_preview_rights.creator_photographer, product_preview_rights.owner_licensor,
+      product_preview_rights.permission_basis, product_preview_rights.permission_evidence, product_preview_rights.channels,
+      product_preview_rights.territories, product_preview_rights.attribution_required, product_preview_rights.effective_on,
+      product_preview_rights.status, product_preview_rights.reviewer, product_preview_rights.reviewed_at)
+    is distinct from (excluded.exact_versioned_url, excluded.asset_identifier, excluded.source,
+      excluded.creator_photographer, excluded.owner_licensor, excluded.permission_basis, excluded.permission_evidence,
+      excluded.channels, excluded.territories, excluded.attribution_required, excluded.effective_on, excluded.status,
+      excluded.reviewer, excluded.reviewed_at)
   `, [rights.id, rights.exactVersionedUrl]);
 
   const columnsPerProduct = 13;
@@ -55,6 +73,13 @@ try {
       binder_sleeve_price=excluded.binder_sleeve_price, toploader_price=excluded.toploader_price,
       product_preview_url=excluded.product_preview_url, product_preview_rights_id=excluded.product_preview_rights_id,
       archived_at=excluded.archived_at
+    where (catalog_products.card_name, catalog_products.collector_number, catalog_products.set_name,
+      catalog_products.rarity_code, catalog_products.design_name, catalog_products.format_code,
+      catalog_products.binder_sleeve_price, catalog_products.toploader_price, catalog_products.product_preview_url,
+      catalog_products.product_preview_rights_id, catalog_products.archived_at)
+    is distinct from (excluded.card_name, excluded.collector_number, excluded.set_name, excluded.rarity_code,
+      excluded.design_name, excluded.format_code, excluded.binder_sleeve_price, excluded.toploader_price,
+      excluded.product_preview_url, excluded.product_preview_rights_id, excluded.archived_at)
   `, values);
   const result = await client.query<{ id: string; slug: string }>(`
     select id, slug from catalog_private.catalog_products

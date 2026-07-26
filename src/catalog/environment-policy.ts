@@ -32,6 +32,24 @@ export function validateCatalogCredential(value: string, identity: "runtime" | "
   return { valid: true as const };
 }
 
+export function assertSyntheticSeedTarget(input: {
+  environment: "local" | "preview" | "production";
+  databaseUrl: string;
+  inventory: CatalogEnvironmentInventory;
+}) {
+  assertCatalogDatabaseOperation({ operation: "seed", environment: input.environment });
+  const url = new URL(input.databaseUrl);
+  const productionRef = input.inventory.environments.production.projectRef;
+  if (url.username.includes(productionRef)) throw new Error("Synthetic fixtures refuse a known Production project reference");
+  if (input.environment === "preview" && !url.username.includes(input.inventory.environments.preview.projectRef)) {
+    throw new Error("Preview synthetic fixtures require the inventoried Preview project reference");
+  }
+  if (input.environment === "local" && !["127.0.0.1", "localhost"].includes(url.hostname)) {
+    throw new Error("Local synthetic fixtures require a loopback database");
+  }
+  return { allowed: true as const };
+}
+
 export function assertCatalogDatabaseOperation(input: {
   operation: "reset" | "studio" | "push" | "migration" | "seed";
   environment: "local" | "preview" | "production";

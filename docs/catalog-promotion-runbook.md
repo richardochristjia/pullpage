@@ -15,8 +15,7 @@ The owner-approved free-plan cutover temporarily uses the available Singapore pr
 ## Identities and secrets
 
 - `catalog_runtime`: login through the transaction pool only, `max: 1`, bounded acquisition/statements, TLS, and SELECT on the public projection only.
-- Migration identity: hosted `postgres` through direct/session access, TLS, finite lock/statement bounds, and available only to the protected migration job.
-- Backup/recovery identity: owner-controlled direct/session credential, absent from Vercel.
+- Managed owner direct identity: hosted `postgres` through TLS direct/session access with finite bounds. The free plan exposes this one owner-only credential for protected migration, backup, and recovery procedures; it is absent from Vercel, never used by routine editors, and recovery still requires explicit `catalog_recovery_operator` role elevation.
 - `catalog_editor`: routine non-destructive Dashboard editing role.
 - `catalog_recovery_operator`: explicitly elevated reviewed recovery role.
 - Named Supabase/Vercel/GitHub accounts require MFA; shared accounts are prohibited.

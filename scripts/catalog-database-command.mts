@@ -8,26 +8,26 @@ import { verifyMigrationHistory } from "../src/catalog/migration-policy.ts";
 
 dotenv.config({ path: ".env.promotion.local", quiet: true });
 dotenv.config({ path: ".env.local", quiet: true });
-const [operation, environment] = process.argv.slice(2) as ["reset" | "studio" | "migration", "local" | "preview" | "production"];
+const [operation, environment] = process.argv.slice(2) as ["reset" | "migration", "local" | "preview" | "production"];
 assertCatalogDatabaseOperation({ operation, environment });
 
 function run(command: string, args: string[], env = process.env) {
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, { stdio: "inherit", shell: process.platform === "win32", env });
+    const child = spawn(command, args, { stdio: "inherit", env });
     child.once("error", reject);
     child.once("exit", (code) => code === 0 ? resolve() : reject(new Error(`${command} exited unsuccessfully`)));
   });
 }
 
+const runSupabase = (args: string[]) => run(process.execPath, ["node_modules/supabase/dist/supabase.js", ...args]);
+
 if (operation === "reset") {
-  await run("npx", ["supabase", "db", "reset"]);
+  await runSupabase(["db", "reset"]);
   await run(process.execPath, ["scripts/seed-synthetic-catalog.mts"], {
     ...process.env,
     CATALOG_SEED_ENVIRONMENT: "local",
     CATALOG_ALLOW_SYNTHETIC_SEED: "true",
   });
-} else if (operation === "studio") {
-  await run("npx", ["supabase", "studio"]);
 } else {
   verifyMigrationHistory(join(process.cwd(), "supabase/migrations"), join(process.cwd(), "supabase/migration-manifest.json"));
   const prefix = environment === "preview" ? "PREVIEW" : "PRODUCTION";
@@ -49,7 +49,7 @@ if (operation === "reset") {
   try {
     const lock = await client.query<{ acquired: boolean }>("select pg_try_advisory_lock(hashtext('pullpage_catalog_migration')) acquired");
     if (!lock.rows[0].acquired) throw new Error(`Another ${environment} Catalog migration is already running`);
-    await run("npx", ["supabase", "db", "push", "--db-url", databaseUrl]);
+    await runSupabase(["db", "push", "--db-url", databaseUrl]);
   } finally {
     await client.query("select pg_advisory_unlock(hashtext('pullpage_catalog_migration'))").catch(() => undefined);
     client.release();
