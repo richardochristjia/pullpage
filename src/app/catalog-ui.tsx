@@ -11,7 +11,7 @@ import {
 } from "@/catalog/interactions";
 import { displayCatalogValue } from "@/catalog/presentation";
 import styles from "./catalog.module.css";
-import { ProductPlaceholder } from "./product-placeholder";
+import { ProductPreview } from "./product-preview";
 
 const idr = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -34,7 +34,11 @@ export function CatalogShelfRow({ product }: { product: PublicCatalogProduct }) 
       data-product-slug={product.slug}
     >
       <article className={styles.product} aria-label={`${cardName} ${collectorNumber}`}>
-        <ProductPlaceholder />
+        <ProductPreview
+          url={product.previewUrl}
+          alt=""
+          sizes="(max-width: 440px) 92px, (max-width: 900px) 116px, 138px"
+        />
         <div className={styles.identity}>
           <div className={styles.kicker}>
             <span>{displayCatalogValue(product.rarity, "Unknown rarity")}</span>

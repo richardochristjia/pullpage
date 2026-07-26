@@ -8,6 +8,37 @@ const databaseUrl = process.env.TEST_CATALOG_DATABASE_URL;
 const adminDatabaseUrl = process.env.SUPABASE_ADMIN_DATABASE_URL;
 const integration = databaseUrl && adminDatabaseUrl ? describe : describe.skip;
 
+type PreviewConfiguration = {
+  environment_name: string;
+  cloud_name: string;
+  asset_folder: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
+async function installTestPreviewConfiguration(admin: Pool) {
+  const previous = await admin.query<PreviewConfiguration>(
+    "select environment_name, cloud_name, asset_folder, created_at, updated_at from catalog_private.product_preview_configuration",
+  );
+  await admin.query("delete from catalog_private.product_preview_configuration");
+  await admin.query(
+    "insert into catalog_private.product_preview_configuration (environment_name, cloud_name) values ('test', 'pullpage-tests')",
+  );
+  return previous.rows[0] ?? null;
+}
+
+async function restorePreviewConfiguration(admin: Pool, previous: PreviewConfiguration | null) {
+  await admin.query("delete from catalog_private.product_preview_configuration");
+  if (previous) {
+    await admin.query(
+      `insert into catalog_private.product_preview_configuration
+        (environment_name, cloud_name, asset_folder, created_at, updated_at)
+       values ($1, $2, $3, $4, $5)`,
+      [previous.environment_name, previous.cloud_name, previous.asset_folder, previous.created_at, previous.updated_at],
+    );
+  }
+}
+
 integration("Catalog database seam", () => {
   afterAll(closeCatalog);
 
@@ -141,35 +172,186 @@ integration("Catalog database seam", () => {
     }
   });
 
-  test("requires the reserved Product Preview linkage to be paired and keeps it private", async () => {
+  test("allows incomplete pending Product Preview rights but requires complete review evidence for approval", async () => {
     const admin = new Pool({ connectionString: adminDatabaseUrl });
-    const id = "22222222-2222-4222-8222-222222222222";
+    const pending = await admin.query<{ id: string }>(
+      "insert into catalog_private.product_preview_rights (status, attribution_required) values ('pending', true) returning id",
+    );
+
     try {
       await expect(admin.query(
-        `insert into catalog_private.catalog_products
-          (card_name, collector_number, format_code, binder_sleeve_price, product_preview_url)
-         values ('Preview Pair', 'url-only', 'BS', 1, 'https://example.com/preview.png')`,
+        "update catalog_private.product_preview_rights set status = 'approved' where id = $1",
+        [pending.rows[0].id],
       )).rejects.toMatchObject({
-        constraint: "catalog_product_preview_pair",
-        hint: expect.stringMatching(/both fields/i),
+        constraint: "product_preview_rights_approval_complete",
+        hint: expect.stringMatching(/evidence/i),
       });
-      await admin.query(
-        `insert into catalog_private.catalog_products
-          (id, card_name, collector_number, format_code, binder_sleeve_price,
-           product_preview_url, product_preview_rights_id)
-         values ($1, 'Preview Pair', 'paired', 'BS', 1,
-           'https://example.com/preview.png', '33333333-3333-4333-8333-333333333333')`,
-        [id],
-      );
-      const projected = await admin.query<{ product_preview_url: null }>(
-        "select product_preview_url from catalog_public.active_catalog_products where collector_number = 'paired'",
-      );
-      expect(projected.rows).toEqual([{ product_preview_url: null }]);
     } finally {
-      await admin.query("delete from catalog_private.catalog_products where id = $1", [id]);
+      await admin.query("delete from catalog_private.product_preview_rights where id = $1", [pending.rows[0].id]);
       await admin.end();
     }
   });
+
+  test("links an active Catalog Product only to its exact current approved Product Preview rights", async () => {
+    const admin = new Pool({ connectionString: adminDatabaseUrl });
+    const url = "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/pikachu/electric-bloom.png";
+    const previousConfiguration = await installTestPreviewConfiguration(admin);
+    const rights = await admin.query<{ id: string }>(`
+      insert into catalog_private.product_preview_rights (
+        exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
+        permission_basis, permission_evidence, channels, territories, attribution_required,
+        effective_on, expires_on, status, reviewer, reviewed_at
+      ) values (
+        '${url}', 'asset-pikachu-v1', 'commission', 'Preview Creator', 'Pullpage',
+        'written permission', 'evidence-reference', array['catalog'], array['ID'], false,
+        current_date - 1, current_date, 'approved', 'Rights Reviewer', statement_timestamp()
+      ) returning id
+    `);
+
+    try {
+      await expect(admin.query(
+        "update catalog_private.product_preview_rights set asset_identifier = 'replacement-in-place' where id = $1",
+        [rights.rows[0].id],
+      )).rejects.toMatchObject({ constraint: "product_preview_rights_asset_immutable" });
+
+      await expect(admin.query(
+        `insert into catalog_private.catalog_products
+          (card_name, collector_number, format_code, binder_sleeve_price, product_preview_url)
+         values ('Preview Pair', 'url-only', 'BS', 1, $1)`,
+        [url],
+      )).rejects.toMatchObject({ constraint: "catalog_product_preview_pair" });
+
+      await expect(admin.query(
+        `insert into catalog_private.catalog_products
+          (card_name, collector_number, format_code, binder_sleeve_price, archived_at,
+           product_preview_url, product_preview_rights_id)
+         values ('Preview Pair', 'mismatch', 'BS', 1, statement_timestamp(), $1, $2)`,
+        [url.replace("electric-bloom", "other"), rights.rows[0].id],
+      )).rejects.toMatchObject({ constraint: "catalog_product_preview_rights_exact" });
+
+      await admin.query(
+        `insert into catalog_private.catalog_products
+          (card_name, collector_number, format_code, binder_sleeve_price,
+           product_preview_url, product_preview_rights_id)
+         values ('Preview Pair', 'current', 'BS', 1, $1, $2)`,
+        [url, rights.rows[0].id],
+      );
+      const projected = (await listActiveCatalogProducts({ databaseUrl })).find(
+        ({ collectorNumber }) => collectorNumber === "current",
+      );
+      expect(projected?.previewUrl).toBe(url);
+      expect(projected).not.toHaveProperty("productPreviewRightsId");
+      expect(JSON.stringify(projected)).not.toContain("evidence-reference");
+
+      await admin.query(
+        "update catalog_private.product_preview_rights set status = 'rejected', takedown_notes = 'withdrawn' where id = $1",
+        [rights.rows[0].id],
+      );
+      expect((await listActiveCatalogProducts({ databaseUrl })).find(
+        ({ collectorNumber }) => collectorNumber === "current",
+      )?.previewUrl).toBeNull();
+      await admin.query("update catalog_private.catalog_products set archived_at = statement_timestamp() where collector_number = 'current'");
+      await expect(admin.query(
+        "update catalog_private.catalog_products set archived_at = null where collector_number = 'current'",
+      )).rejects.toMatchObject({ constraint: "catalog_product_preview_rights_current" });
+      await admin.query(
+        "update catalog_private.product_preview_rights set status = 'approved' where id = $1",
+        [rights.rows[0].id],
+      );
+      await admin.query("update catalog_private.catalog_products set archived_at = null where collector_number = 'current'");
+      await admin.query(
+        "update catalog_private.product_preview_rights set expires_on = current_date - 1 where id = $1",
+        [rights.rows[0].id],
+      );
+      expect((await listActiveCatalogProducts({ databaseUrl })).find(
+        ({ collectorNumber }) => collectorNumber === "current",
+      )?.previewUrl).toBeNull();
+      await admin.query(
+        "update catalog_private.product_preview_rights set expires_on = current_date where id = $1",
+        [rights.rows[0].id],
+      );
+      await admin.query("update catalog_private.product_preview_configuration set cloud_name = 'other-cloud'");
+      expect((await listActiveCatalogProducts({ databaseUrl })).find(
+        ({ collectorNumber }) => collectorNumber === "current",
+      )?.previewUrl).toBeNull();
+    } finally {
+      await admin.query("delete from catalog_private.catalog_products where collector_number = 'current' and product_preview_rights_id = $1", [rights.rows[0].id]);
+      await admin.query("delete from catalog_private.product_preview_rights where id = $1", [rights.rows[0].id]);
+      await restorePreviewConfiguration(admin, previousConfiguration);
+      await admin.end();
+    }
+  });
+
+  test("rejects unsafe Product Preview URLs and non-current rights without contacting delivery", async () => {
+    const admin = new Pool({ connectionString: adminDatabaseUrl });
+    const previousConfiguration = await installTestPreviewConfiguration(admin);
+    const valid = "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000002/catalog-products/asset.png";
+    const invalidUrls = [
+      valid.replace("https://", "http://"),
+      valid.replace("res.cloudinary.com", "user@res.cloudinary.com"),
+      valid.replace("res.cloudinary.com", "res.cloudinary.com:443"),
+      `${valid}#fragment`, `${valid}?download=1`,
+      valid.replace("pullpage-tests", "unapproved-cloud"),
+      valid.replace("catalog-products", "other-folder"),
+      valid.replace("asset.png", "asset.svg"),
+      valid.replace("/v1700000002", ""),
+      valid.replace("/v1700000002", "/c_fill,w_200/v1700000002"),
+    ];
+    const overlongUrl = `https://res.cloudinary.com/pullpage-tests/image/upload/v1/catalog-products/${"a".repeat(2030)}.png`;
+    let futureRightsId: string | null = null;
+    const approve = (url: string, asset = "asset") => admin.query(`
+      insert into catalog_private.product_preview_rights (
+        exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
+        permission_basis, permission_evidence, channels, territories, attribution_required,
+        effective_on, status, reviewer, reviewed_at
+      ) values ($1, $2, 'source', 'creator', 'owner', 'permission', 'evidence',
+        array['catalog'], array['ID'], false, current_date, 'approved', 'reviewer', statement_timestamp())
+      returning id
+    `, [url, asset]);
+
+    try {
+      await expect(admin.query(`
+        insert into catalog_private.product_preview_rights (
+          exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
+          permission_basis, permission_evidence, channels, territories, attribution_required,
+          effective_on, status, reviewer, reviewed_at
+        ) values ($1, 'blank-list', 'source', 'creator', 'owner', 'permission', 'evidence',
+          array[''], array['ID'], false, current_date, 'approved', 'reviewer', statement_timestamp())
+      `, [valid])).rejects.toMatchObject({
+        constraint: "product_preview_rights_approved_lists_complete",
+      });
+
+      for (const [index, url] of invalidUrls.entries()) {
+        await expect(approve(url, `invalid-${index}`)).rejects.toMatchObject({
+          constraint: "product_preview_rights_url_valid",
+        });
+      }
+      await expect(approve(overlongUrl, "overlong")).rejects.toThrow(/too long/i);
+
+      const future = await admin.query<{ id: string }>(`
+        insert into catalog_private.product_preview_rights (
+          exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
+          permission_basis, permission_evidence, channels, territories, attribution_required,
+          effective_on, status, reviewer, reviewed_at
+        ) values ($1, 'future', 'source', 'creator', 'owner', 'permission', 'evidence',
+          array['catalog'], array['ID'], false, current_date + 1, 'approved', 'reviewer', statement_timestamp())
+        returning id
+      `, [valid]);
+      futureRightsId = future.rows[0].id;
+      await expect(admin.query(
+        `insert into catalog_private.catalog_products
+          (card_name, collector_number, format_code, binder_sleeve_price, product_preview_url, product_preview_rights_id)
+         values ('Preview State', 'future', 'BS', 1, $1, $2)`,
+        [valid, future.rows[0].id],
+      )).rejects.toMatchObject({ constraint: "catalog_product_preview_rights_current" });
+    } finally {
+      if (futureRightsId) {
+        await admin.query("delete from catalog_private.product_preview_rights where id = $1", [futureRightsId]);
+      }
+      await restorePreviewConfiguration(admin, previousConfiguration);
+      await admin.end();
+    }
+  }, 15_000);
 
   test("generates bounded random slugs and protects database-owned fields", async () => {
     const admin = new Pool({ connectionString: adminDatabaseUrl });

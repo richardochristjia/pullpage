@@ -4,7 +4,7 @@ import { Pool } from "pg";
 
 const webhookSecret = process.env.CATALOG_REVALIDATE_SECRET;
 
-test("accepts only authenticated Catalog Product invalidation events", async ({ request }) => {
+test("accepts only authenticated fixed-scope Catalog invalidation events", async ({ request }) => {
   expect(webhookSecret).toBeTruthy();
   const endpoint = "/api/catalog/invalidate";
   expect((await request.get(endpoint)).status()).toBe(405);
@@ -17,12 +17,14 @@ test("accepts only authenticated Catalog Product invalidation events", async ({ 
     headers: { authorization: `Bearer ${webhookSecret}` },
     data: { type: "UPDATE", schema: "catalog_private", table: "catalog_products", tag: "caller-tag" },
   })).status()).toBe(400);
-  const accepted = await request.post(endpoint, {
-    headers: { authorization: `Bearer ${webhookSecret}` },
-    data: { type: "UPDATE", schema: "catalog_private", table: "catalog_products" },
-  });
-  expect(accepted.status()).toBe(200);
-  expect(await accepted.json()).toEqual({ revalidated: true });
+  for (const table of ["catalog_products", "product_preview_rights", "product_preview_configuration"]) {
+    const accepted = await request.post(endpoint, {
+      headers: { authorization: `Bearer ${webhookSecret}` },
+      data: { type: "UPDATE", schema: "catalog_private", table },
+    });
+    expect(accepted.status()).toBe(200);
+    expect(await accepted.json()).toEqual({ revalidated: true });
+  }
 });
 
 test("publishes a Dashboard-equivalent insert and edit without deployment", async ({ page, request }) => {

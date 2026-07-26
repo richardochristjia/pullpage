@@ -16,7 +16,7 @@ Use this workflow in the dedicated non-production project before working in Prod
 - Enter positive whole-rupiah prices without symbols, separators, decimals, zero, or negative signs. `BS` requires Binder Sleeve price, `TL` requires Toploader price, and `ALL` requires both. An irrelevant positive stored price is ignored publicly.
 - Choose a configured Rarity (`C`, `U`, `R`, `RR`, `AR`, `SR`, `SAR`, or `UR`) or leave it empty.
 - If another active or archived row depicts the same Card Name + Collector Number + Set Name after case/accent/whitespace normalization, every matching row needs a distinct Design Name. Punctuation remains significant.
-- For this slice, leave Product Preview URL and rights ID empty. Rights-safe previews are introduced separately.
+- Leave Product Preview URL and rights ID empty unless the rights-safe workflow below has produced a current approved pair. Both values must identify the exact same versioned asset and must be saved together.
 
 Save once. Refresh the row and record its ID, generated slug, and UTC save time. Descriptive edits never change the slug.
 
@@ -54,6 +54,33 @@ If Save times out or loses its connection, **do not retry immediately**. Refresh
 
 A non-developer rehearsal records screenshots and UTC timestamps for: one valid missing-value create, one valid edit, each error category above, unchanged slug, public before/after results, and one simulated ambiguous result resolved by checking the persisted row before retry. Retain the completed record with the release evidence.
 
+## Rights-safe Product Preview workflow
+
+Only the designated Rights Reviewer may approve a Product Preview. Routine Catalog Editors must not infer permission from possession of an image.
+
+### Maintainer: environment configuration
+
+In each Supabase environment, keep exactly one row in `catalog_private.product_preview_configuration`. Set that environment's name, its approved Cloudinary cloud name, and the fixed folder `catalog-products/`. Never copy Production configuration into a different environment by assumption. Configuration is private and is not part of the public Catalog projection.
+
+Use public, unauthenticated raster assets in Cloudinary. The exact delivery URL must use HTTPS, `res.cloudinary.com`, the configured cloud, `image/upload`, an explicit numeric `v…` version, the `catalog-products/` folder, and a supported raster extension. Do not paste transformation URLs, SVG, share links, credentials, ports, query strings, or fragments. Saving validates text only and never contacts Cloudinary.
+
+### Prepare and approve rights
+
+1. Upload a new asset under `catalog-products/` and copy its exact versioned secure URL and asset identifier. Never overwrite an already-published version.
+2. Create a **pending** row in `catalog_private.product_preview_rights`. Pending records may be incomplete.
+3. Record the exact URL, asset identifier, source, creator/photographer, owner/licensor, permission basis and evidence reference, approved channels and territories, attribution decision and required text, effective date, optional expiry date, and any takedown notes.
+4. The Rights Reviewer verifies the evidence, enters reviewer and review time, and changes status to `approved`. Approval fails until every required field is complete and the URL matches this environment. Expiry remains current through the stated calendar date.
+5. In one Catalog Product save, set both `product_preview_url` and `product_preview_rights_id` from that same approved row. A missing, mismatched, pending, future-effective, rejected, or expired pair is rejected for an active product.
+6. Verify the shelf thumbnail and the larger canonical/modal detail image in a fresh browser. Textual Catalog facts must remain visible if image delivery is unavailable.
+
+To replace an image, prepare and approve a newly versioned asset and a new rights row, save the new exact pair, and verify public delivery. Only then may the old Cloudinary asset be removed. Do not edit an old URL in place.
+
+For a takedown, change rights status to `rejected`, record the reason, and verify the common Pullpage placeholder. Expiry and relevant configuration changes also withdraw the public URL. Do not clear evidence. Escalate delivery failures separately: temporary Cloudinary failure does not invalidate the stored Catalog Product.
+
+### Product Preview rehearsal record
+
+In the dedicated non-production environment, retain screenshots, row IDs, exact versioned URLs, and UTC timestamps for: incomplete pending rights; failed incomplete approval; successful approval and linkage; invalid URL rejection then correction; newly versioned replacement before old-asset removal; rejection/takedown; expiry through and after the expiry date; configuration mismatch and restoration; and missing, blocked, timeout, and HTTP-failure placeholders. Confirm no private evidence appears in browser responses.
+
 ## Maintainer: automatic invalidation
 
-Configure one Supabase Database Webhook for `INSERT`, `UPDATE`, and `DELETE` on `catalog_private.catalog_products`. Send `POST` to `/api/catalog/invalidate` with `Authorization: Bearer <CATALOG_REVALIDATE_SECRET>`. The application accepts only that method, secret, schema, table, and event type; callers cannot choose a cache tag or path. Rotate the application secret and webhook header together.
+Configure Supabase Database Webhooks for `INSERT`, `UPDATE`, and `DELETE` on all three fixed-scope tables: `catalog_private.catalog_products`, `catalog_private.product_preview_rights`, and `catalog_private.product_preview_configuration`. Send `POST` to `/api/catalog/invalidate` with `Authorization: Bearer <CATALOG_REVALIDATE_SECRET>`. The application accepts only those methods, secret, schema, tables, and event types; callers cannot choose a cache tag or path. Rotate the application secret and webhook headers together. If an expiry passes without a database event, the 60-second Catalog cache fallback converges the public URL to the placeholder.

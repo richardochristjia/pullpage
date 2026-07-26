@@ -11,6 +11,12 @@ function secretsMatch(actual: string | null, expected: string) {
   return supplied.length === configured.length && timingSafeEqual(supplied, configured);
 }
 
+const INVALIDATING_CATALOG_TABLES = new Set([
+  "catalog_products",
+  "product_preview_rights",
+  "product_preview_configuration",
+]);
+
 function isExpectedCatalogEvent(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const event = value as Record<string, unknown>;
@@ -18,7 +24,8 @@ function isExpectedCatalogEvent(value: unknown) {
   return (
     (event.type === "INSERT" || event.type === "UPDATE" || event.type === "DELETE") &&
     event.schema === "catalog_private" &&
-    event.table === "catalog_products"
+    typeof event.table === "string" &&
+    INVALIDATING_CATALOG_TABLES.has(event.table)
   );
 }
 
@@ -42,6 +49,6 @@ export async function invalidateCatalog(request: Request) {
   }
 
   revalidateTag(CATALOG_CACHE_TAG, { expire: 0 });
-  console.info("Accepted Catalog Product cache invalidation event");
+  console.info("Accepted Catalog cache invalidation event");
   return Response.json({ revalidated: true });
 }

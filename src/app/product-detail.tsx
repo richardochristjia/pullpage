@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import { displayCatalogValue } from "@/catalog/presentation";
-import { ProductPlaceholder } from "./product-placeholder";
+import { ProductPreview } from "./product-preview";
 import styles from "./product-detail.module.css";
 
 const idr = new Intl.NumberFormat("id-ID", {
@@ -23,7 +23,11 @@ export function ProductDetail({ product, headingId, modal = false }: {
   const Heading = modal ? "h2" : "h1";
   return (
     <article className={styles.detail}>
-      <ProductPlaceholder />
+      <ProductPreview
+        url={product.previewUrl}
+        alt={`Finished Product Preview for ${productHeading(product)}`}
+        sizes="(max-width: 700px) calc(100vw - 32px), 420px"
+      />
       <div className={styles.content}>
         <p className={styles.eyebrow}>Catalog Product</p>
         <Heading id={headingId}>{productHeading(product)}</Heading>
