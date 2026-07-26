@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getCatalogProduct } from "@/catalog/catalog";
-import { indexingPolicy, productDiscoverability, SOCIAL_FALLBACK_URL } from "@/catalog/discoverability";
+import { indexingPolicy, productCanonical, productDiscoverability, SOCIAL_FALLBACK_URL } from "@/catalog/discoverability";
 
 export type ProductMetadataProps = { params: Promise<{ slug: string }> };
 
 export async function generateCatalogProductMetadata({ params }: ProductMetadataProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getCatalogProduct(slug);
-  if (!product) notFound();
+  if (!product) {
+    return {
+      title: { absolute: "Pullpage" },
+      alternates: { canonical: productCanonical(slug) },
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: { index: false, follow: false },
+      },
+    };
+  }
 
   const content = productDiscoverability(product);
   const image = {

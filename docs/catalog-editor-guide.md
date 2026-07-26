@@ -48,6 +48,29 @@ In a fresh browser session, allow up to 60 seconds under healthy operation and v
 
 If the old state remains after 60 seconds, stop editing and ask the Catalog Maintainer to check the persisted row, webhook delivery, and Catalog refresh. Do not save repeatedly. The 60-second target covers Pullpage-controlled responses only: search engines and social platforms choose their own recrawl and cached-card refresh timing, with no 60-second guarantee.
 
+## Archive and restore
+
+Routine removal is reversible archival. Never use Dashboard Delete, SQL, CSV import, or a blank replacement row. Archival is not inventory, availability, out-of-stock, or sold-out state.
+
+### Archive
+
+1. Open the existing row and record its immutable UUID and slug in the workflow evidence.
+2. Record the reason, operator, and current UTC time outside the public Catalog row. Do not put private operational notes into customer-facing fields.
+3. Change **only** `archived_at` from empty to the current UTC timestamp and save once. Any non-empty timestamp archives immediately—even a future timestamp—so do not schedule archival by entering a future time.
+4. Do not clear or alter source facts, prices, Design Name, Product Preview linkage, UUID, slug, or creation time. Archival remains possible when linked rights have expired or been rejected, or when the environment no longer accepts the old Cloudinary URL.
+5. In a fresh browser, allow up to 60 seconds under healthy operation and record UTC evidence that the product is absent from the shelf and local search, its hard and soft URLs show branded `noindex` not-found content without product facts, and its canonical and Product Preview image are absent from `/sitemap.xml`.
+
+If the old state remains before convergence, do not save again: clients and shared cache entries may briefly show the last active generation. After 60 seconds, follow the same persisted-row, webhook, and Catalog-refresh escalation used for publication.
+
+### Restore
+
+1. Find the archived row by the recorded UUID and verify its slug has not changed.
+2. Correct every current active constraint before or in the restoration save: Supported Binder Formats and prices, configured Rarity, duplicate identity and distinct Design Name, exact Product Preview pairing, current approved rights, and this environment's Cloudinary rules. Do not bypass a rejection or create a replacement row.
+3. Clear `archived_at` and save once. A rejected restoration leaves the original row archived.
+4. In a fresh browser, allow up to 60 seconds and record UTC evidence that the same slug appears on the shelf and in local search, opens as a canonical page and intercepted modal, has current metadata, and returns to `/sitemap.xml` with its Product Preview image only when rights are current.
+
+The Preview rehearsal must be completed by a non-developer using Table Editor only. Retain before/after screenshots, immutable UUID and slug, reason, operator, archive and restore UTC times, rejected-restoration correction evidence, webhook/convergence times, and every public verification above. No developer intervention, SQL, or deletion is part of the rehearsal.
+
 ## Ambiguous Save result
 
 If Save times out or loses its connection, **do not retry immediately**. Refresh Table Editor and search using the facts prepared for that save. If the row and generated slug exist, verify that row publicly. Retry only after confirming that no row committed; this prevents duplicate insertion.

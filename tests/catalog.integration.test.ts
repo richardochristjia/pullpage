@@ -469,12 +469,136 @@ integration("Catalog database seam", () => {
     await second.end();
   });
 
-  test("denies writes through the runtime database identity", async () => {
+  test("archives an invalid-preview Catalog Product immediately and restores the same identity only after correction", async () => {
+    const admin = new Pool({ connectionString: adminDatabaseUrl });
+    const previousConfiguration = await installTestPreviewConfiguration(admin);
+    const url = "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000006/catalog-products/archive/lifecycle.png";
+    let rightsId: string | undefined;
+    let productId: string | undefined;
+    let conflictingProductId: string | undefined;
+
+    try {
+      const archiveColumn = await admin.query<{ data_type: string; is_nullable: string }>(`
+        select data_type, is_nullable from information_schema.columns
+        where table_schema = 'catalog_private' and table_name = 'catalog_products'
+          and column_name = 'archived_at'
+      `);
+      expect(archiveColumn.rows).toEqual([{ data_type: "timestamp with time zone", is_nullable: "YES" }]);
+
+      const rights = await admin.query<{ id: string }>(`
+        insert into catalog_private.product_preview_rights (
+          exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
+          permission_basis, permission_evidence, channels, territories, attribution_required,
+          effective_on, status, reviewer, reviewed_at
+        ) values ($1, 'archive-lifecycle-v1', 'commission', 'Archive Creator', 'Pullpage',
+          'written permission', 'archive evidence', array['catalog'], array['ID'], false,
+          current_date, 'approved', 'Archive Reviewer', statement_timestamp())
+        returning id
+      `, [url]);
+      rightsId = rights.rows[0].id;
+      const inserted = await admin.query<{
+        id: string; slug: string; created_at: Date; updated_at: Date;
+      }>(`
+        insert into catalog_private.catalog_products (
+          card_name, collector_number, set_name, rarity_code, design_name, format_code,
+          binder_sleeve_price, toploader_price, product_preview_url, product_preview_rights_id
+        ) values ('Archive Lifecycle', '006/006', 'Workflow Set', 'AR', 'Original Design',
+          'ALL', 91000, 121000, $1, $2)
+        returning id, slug, created_at, updated_at
+      `, [url, rightsId]);
+      productId = inserted.rows[0].id;
+      const original = inserted.rows[0];
+
+      await admin.query("update catalog_private.product_preview_configuration set cloud_name = 'withdrawn-cloud'");
+      const futureArchive = new Date(Date.now() + 86_400_000);
+      const archived = await admin.query<{
+        id: string; slug: string; card_name: string; collector_number: string; set_name: string;
+        rarity_code: string; design_name: string; format_code: string; binder_sleeve_price: number;
+        toploader_price: number; product_preview_url: string; product_preview_rights_id: string;
+        archived_at: Date; created_at: Date;
+      }>(`
+        update catalog_private.catalog_products set archived_at = $2
+        where id = $1
+        returning id, slug, card_name, collector_number, set_name, rarity_code, design_name,
+          format_code, binder_sleeve_price, toploader_price, product_preview_url,
+          product_preview_rights_id, archived_at, created_at
+      `, [productId, futureArchive]);
+
+      expect(archived.rows[0]).toMatchObject({
+        id: original.id,
+        slug: original.slug,
+        card_name: "Archive Lifecycle",
+        collector_number: "006/006",
+        set_name: "Workflow Set",
+        rarity_code: "AR",
+        design_name: "Original Design",
+        format_code: "ALL",
+        binder_sleeve_price: 91_000,
+        toploader_price: 121_000,
+        product_preview_url: url,
+        product_preview_rights_id: rightsId,
+        created_at: original.created_at,
+      });
+      expect(archived.rows[0].archived_at.toISOString()).toBe(futureArchive.toISOString());
+      expect((await listActiveCatalogProducts({ databaseUrl })).some(({ slug }) => slug === original.slug)).toBe(false);
+
+      await expect(admin.query(
+        "update catalog_private.catalog_products set archived_at = null where id = $1",
+        [productId],
+      )).rejects.toMatchObject({ constraint: "catalog_product_preview_rights_current" });
+      await expect(admin.query(
+        "update catalog_private.catalog_products set archived_at = null, format_code = 'ALL', toploader_price = null where id = $1",
+        [productId],
+      )).rejects.toMatchObject({ constraint: "catalog_product_toploader_price_required" });
+      await expect(admin.query(
+        "update catalog_private.catalog_products set archived_at = null, rarity_code = 'SECRET' where id = $1",
+        [productId],
+      )).rejects.toMatchObject({ constraint: "catalog_product_rarity_configured" });
+      await expect(admin.query(
+        "update catalog_private.catalog_products set archived_at = null, product_preview_url = null where id = $1",
+        [productId],
+      )).rejects.toMatchObject({ constraint: "catalog_product_preview_pair" });
+      await admin.query("update catalog_private.product_preview_configuration set cloud_name = 'pullpage-tests'");
+      const conflict = await admin.query<{ id: string }>(`
+        insert into catalog_private.catalog_products
+          (card_name, collector_number, set_name, format_code, binder_sleeve_price)
+        values ('Restore Conflict', 'same', 'same', 'BS', 1) returning id
+      `);
+      conflictingProductId = conflict.rows[0].id;
+      await expect(admin.query(`
+        update catalog_private.catalog_products
+        set archived_at = null, card_name = 'Restore Conflict', collector_number = 'same',
+          set_name = 'same', design_name = null
+        where id = $1
+      `, [productId])).rejects.toMatchObject({ constraint: "catalog_product_duplicate_requires_design_name" });
+
+      const restored = await admin.query<{ id: string; slug: string }>(
+        "update catalog_private.catalog_products set archived_at = null where id = $1 returning id, slug",
+        [productId],
+      );
+      expect(restored.rows[0]).toEqual({ id: original.id, slug: original.slug });
+      expect((await listActiveCatalogProducts({ databaseUrl })).find(({ slug }) => slug === original.slug)?.previewUrl).toBe(url);
+    } finally {
+      if (productId) await admin.query("delete from catalog_private.catalog_products where id = $1", [productId]);
+      if (conflictingProductId) await admin.query("delete from catalog_private.catalog_products where id = $1", [conflictingProductId]);
+      if (rightsId) await admin.query("delete from catalog_private.product_preview_rights where id = $1", [rightsId]);
+      await restorePreviewConfiguration(admin, previousConfiguration);
+      await admin.end();
+    }
+  });
+
+  test("denies archive, restore, and hard deletion through the runtime database identity", async () => {
     const pool = new Pool({ connectionString: databaseUrl });
 
     await expect(
-      pool.query("update catalog_private.catalog_products set card_name = 'Changed'"),
+      pool.query("update catalog_private.catalog_products set archived_at = statement_timestamp()"),
     ).rejects.toThrow(/permission denied/i);
+    await expect(
+      pool.query("delete from catalog_private.catalog_products"),
+    ).rejects.toThrow(/permission denied/i);
+    await expect(
+      pool.query("delete from catalog_public.active_catalog_products"),
+    ).rejects.toThrow(/permission denied|cannot delete/i);
 
     await pool.end();
   });

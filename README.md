@@ -43,7 +43,7 @@ Canonical and shared links always use `https://pullpage.vercel.app`, including P
 
 ## Catalog editing
 
-Follow [Catalog Editor: Edit → Save → Verify](docs/catalog-editor-guide.md). The guide covers fields, actionable database errors, generated slugs, public verification, ambiguous saves, and the required non-developer rehearsal.
+Follow [Catalog Editor: Edit → Save → Verify](docs/catalog-editor-guide.md). The guide covers fields, actionable database errors, generated slugs, reversible archive/restore, public verification, ambiguous saves, and the required non-developer rehearsals. Routine Catalog Editors never hard-delete Catalog Products.
 
 ## Validation
 
