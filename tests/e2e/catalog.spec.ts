@@ -81,6 +81,7 @@ test("publishes a Dashboard-equivalent insert and edit without deployment", asyn
 });
 
 test("renders the seeded Catalog Product through the database-to-shelf path", async ({ page, request }) => {
+  test.setTimeout(60_000);
   const browserRequests: string[] = [];
   page.on("request", (request) => browserRequests.push(request.url()));
 

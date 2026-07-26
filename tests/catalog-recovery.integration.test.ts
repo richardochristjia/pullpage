@@ -189,6 +189,27 @@ integration("Catalog recovery database seam", () => {
     expect(trigger.rowCount).toBe(1);
   });
 
+  test("owns fixed-scope invalidation triggers for every Catalog projection input", async () => {
+    const triggers = await admin.query<{ table_name: string; trigger_name: string }>(`
+      select c.relname table_name, t.tgname trigger_name
+      from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='catalog_private' and t.tgname in (
+        'catalog_product_99_invalidate', 'product_preview_rights_99_invalidate',
+        'product_preview_configuration_99_invalidate'
+      ) order by c.relname
+    `);
+    expect(triggers.rows).toEqual([
+      { table_name: "catalog_products", trigger_name: "catalog_product_99_invalidate" },
+      { table_name: "product_preview_configuration", trigger_name: "product_preview_configuration_99_invalidate" },
+      { table_name: "product_preview_rights", trigger_name: "product_preview_rights_99_invalidate" },
+    ]);
+    const owner = await admin.query<{ owner: string }>(`
+      select pg_get_userbyid(proowner) owner from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='catalog_private' and p.proname='enqueue_catalog_invalidation'
+    `);
+    expect(owner.rows).toEqual([{ owner: "postgres" }]);
+  });
+
   test("restricts journal evidence and hard deletion while controlled deletion retains its before-image", async () => {
     await inRollbackTransaction(admin, async (client) => {
       const inserted = await client.query<{ id: string; slug: string }>(`

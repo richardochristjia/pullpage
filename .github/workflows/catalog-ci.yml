@@ -1,0 +1,77 @@
+name: Catalog CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  from-zero:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LOCAL_MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      SUPABASE_ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      CATALOG_REVALIDATE_SECRET: local-ci-invalidation-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx supabase start
+      - run: npm run db:reset
+      - name: Provision isolated local runtime identity
+        run: |
+          printf 'SUPABASE_ADMIN_DATABASE_URL=%s\nCATALOG_REVALIDATE_SECRET=%s\n' "$SUPABASE_ADMIN_DATABASE_URL" "$CATALOG_REVALIDATE_SECRET" > .env.local
+          npm run db:provision-runtime
+      - run: npm run catalog:verify-tooling
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Verify migration/schema drift
+        run: |
+          npm run db:lint
+          test -z "$(npx supabase db diff --local --schema catalog_private,catalog_public)"
+
+  prior-schema-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LOCAL_MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      CATALOG_SEED_ENVIRONMENT: local
+      CATALOG_ALLOW_SYNTHETIC_SEED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx supabase start
+      - name: Build prior schema with the 500-product fixture
+        run: |
+          mkdir -p /tmp/later-migrations
+          mv supabase/migrations/20260728*.sql supabase/migrations/20260729*.sql /tmp/later-migrations/
+          npx supabase db reset
+          node scripts/seed-synthetic-catalog.mts
+          mv /tmp/later-migrations/*.sql supabase/migrations/
+      - name: Upgrade and retain compatibility evidence
+        run: |
+          started=$(date +%s%3N)
+          npx supabase db push --local
+          finished=$(date +%s%3N)
+          UPGRADE_DURATION_MS=$((finished-started)) node scripts/record-catalog-upgrade-evidence.mts > catalog-upgrade-evidence.json
+      - run: CATALOG_VERIFY_DATABASE_URL="$LOCAL_MIGRATION_DATABASE_URL" npm run db:verify-catalog
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalog-upgrade-evidence
+          path: catalog-upgrade-evidence.json
+          retention-days: 30

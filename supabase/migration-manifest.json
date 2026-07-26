@@ -1,0 +1,22 @@
+{
+  "algorithm": "sha256",
+  "migrations": {
+    "20260725000000_catalog_tracer.sql": "e7dcac9394d874597a20dc621981046230b66237d0d1613c05037caa6330945a",
+    "20260726000000_complete_catalog_product.sql": "2ba0cf2199e34ce37ee20f39c7628ac504ee8fa701e2abe8ceb20e1801500b15",
+    "20260726010000_canonicalize_whitespace_text.sql": "5c3b9ec3b4a20bb3afd226c6109d0175ab65b22f04f51a0f67714181691f6339",
+    "20260726020000_complete_catalog_guardrails.sql": "64a8d36da12c30f735efe34cd67ba6aae80c33dd02aede87254c4829641114f0",
+    "20260726030000_normalize_identity_whitespace.sql": "a4a2864a9b42405eefda8b4d885d2ff6ef168c74c3d2af6a2f528d0fafa5ad6c",
+    "20260727000000_create_product_preview_rights.sql": "d247e43d9f3f508091b42a66b039c2685f85caddd0d7df53d5a648b575e75a65",
+    "20260727010000_validate_product_preview_links.sql": "62931af9e2207af366228dce83b92d4bce1af32d2f998e853bfa833f5661918a",
+    "20260727020000_publish_current_product_previews.sql": "a5a0d0a3c1cb20df14c1e48c3f38e90e0a0c3b249ffbcd95cb52913fe951bd6b",
+    "20260727030000_allow_incomplete_pending_preview_rights.sql": "2d23c7c9f88809ed6db918707b22d79bd613c95766ad2d0f84d208f22abe0f2b",
+    "20260727040000_require_complete_preview_rights_lists.sql": "293e5ad347bf3252fcb2593ad5ea49f009f330a8b79b7bf8cb76776983a43d0f",
+    "20260727050000_protect_reviewed_preview_assets.sql": "789aa6a5611b5b49b082b4d5138ed8cc6bb4ec4082c87752a1d5f676eaf97091",
+    "20260728000000_audit_and_recover_catalog_products.sql": "f673082516b8562ab58b1fad6242d54e50497fabc46bd406b4fd8ed478ae0ae3",
+    "20260728010000_allow_catalog_recovery_validation.sql": "91bbdc8b7c8c403392a69a4bac707e5c928084183d767cd18ee81c63a921adf0",
+    "20260728020000_require_explicit_recovery_elevation.sql": "c3f6983185012dad3c8407cfb6597484c35528da614b63b08eb64051cc16db26",
+    "20260728030000_expose_only_controlled_recovery_operations.sql": "2e56db9831d3d6e80f02239522e357fa6f62e3fa6a2ff0efee0663e91b9f0159",
+    "20260729000000_create_catalog_invalidation_webhook.sql": "e8cf9a8e0a6b5497ee8cc92c37443c8e2009081effc5d8b226bc7f9932c64a76",
+    "20260729010000_invalidate_catalog_preview_changes.sql": "19432b8594d2949c297132c32e4180f8402088baebcdb37a93f12e6a62cabfab"
+  }
+}

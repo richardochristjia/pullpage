@@ -2,8 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { Pool } from "pg";
 
-const fixtureDesign = `Browser Fixture ${Date.now()}`;
-const fixtureCollectorPrefix = `browser-${Date.now()}`;
+const fixtureDesign = "Synthetic Browser Fixture";
+const fixtureCollectorPrefix = "synthetic-browser";
 const webhookSecret = process.env.CATALOG_REVALIDATE_SECRET;
 let admin: Pool;
 let archivedSlug: string;
@@ -22,7 +22,7 @@ test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async ({ request }) => {
   admin = new Pool({ connectionString: process.env.SUPABASE_ADMIN_DATABASE_URL });
-  await admin.query("delete from catalog_private.catalog_products where design_name like 'Browser Fixture %'");
+  await admin.query("update catalog_private.catalog_products set archived_at = null where id::text like '10000000-0000-4000-8000-%' and right(id::text, 12)::bigint between 477 and 496");
   const seedPreview = await admin.query<typeof previousSeedPreview>(
     `select product_preview_url, product_preview_rights_id::text
      from catalog_private.catalog_products
@@ -55,27 +55,9 @@ test.beforeAll(async ({ request }) => {
      where id = '11111111-1111-4111-8111-111111111111'`,
     [previewUrl, previewRightsId],
   );
-  await admin.query(
-    `insert into catalog_private.catalog_products
-      (card_name, collector_number, set_name, rarity_code, design_name, format_code,
-       binder_sleeve_price, toploader_price)
-     select
-       case when n = 499 then null when n = 1 then '  Exact  Spacing  ' else 'Catalog Test ' || lpad(n::text, 3, '0') end,
-       case when n = 499 then null else $1 || '-' || n end,
-       case when n % 10 = 0 or n = 499 then null else 'Synthetic Set ' || (n % 5) end,
-       case when n % 11 = 0 or n = 499 then null else
-         (array['C','U','R','RR','AR','SR','SAR','UR'])[(n % 8) + 1] end,
-       $2,
-       case when n % 3 = 0 then 'BS' when n % 3 = 1 then 'TL' else 'ALL' end,
-       case when n % 3 in (0, 2) then 50000 + n else null end,
-       case when n % 3 in (1, 2) then 70000 + n else null end
-     from generate_series(1, 499) n`,
-    [fixtureCollectorPrefix, fixtureDesign],
-  );
   const archived = await admin.query<{ slug: string }>(
-    `insert into catalog_private.catalog_products
-      (card_name, collector_number, design_name, format_code, binder_sleeve_price, archived_at)
-     values ('Archived Browser Fixture', $1, $2, 'BS', 50000, now()) returning slug`,
+    `select slug from catalog_private.catalog_products
+     where collector_number = $1 and design_name = $2 and archived_at is not null`,
     [`${fixtureCollectorPrefix}-archived`, fixtureDesign],
   );
   archivedSlug = archived.rows[0].slug;
@@ -87,7 +69,6 @@ test.beforeAll(async ({ request }) => {
 });
 
 test.afterAll(async ({ request }) => {
-  await admin.query("delete from catalog_private.catalog_products where design_name = $1", [fixtureDesign]);
   await admin.query(
     `update catalog_private.catalog_products
      set product_preview_url = null, product_preview_rights_id = null
@@ -115,6 +96,7 @@ test.afterAll(async ({ request }) => {
      where id = '11111111-1111-4111-8111-111111111111'`,
     [previousSeedPreview.product_preview_url, previousSeedPreview.product_preview_rights_id],
   );
+  await admin.query("update catalog_private.catalog_products set archived_at = timestamptz '2026-01-01 00:00:00+00' where id::text like '10000000-0000-4000-8000-%' and right(id::text, 12)::bigint between 477 and 496");
   await request.post("/api/catalog/invalidate", {
     headers: { authorization: `Bearer ${webhookSecret}` },
     data: { type: "DELETE", schema: "catalog_private", table: "catalog_products" },
@@ -127,7 +109,8 @@ test("searches the delivered Catalog locally and resets a zero-result shelf", as
   const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
   const requests: string[] = [];
   page.on("request", (request) => {
-    if (request.resourceType() !== "image") requests.push(request.url());
+    const url = request.url();
+    if (request.resourceType() !== "image" && !url.startsWith("https://vercel.live/") && url !== page.url()) requests.push(url);
   });
 
   await search.fill("pika-chu");
@@ -300,12 +283,23 @@ test("renders complete canonical and branded not-found routes without JavaScript
     javaScriptEnabled: false,
     userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
   });
-  const direct = await noScript.newPage();
-  await direct.goto(new URL(href!, "http://127.0.0.1:3000").toString());
-  await expect(direct.getByRole("heading", { level: 1, name: "Pikachu — Electric Bloom" })).toBeVisible();
-  await expect(direct.getByText("Scarlet & Violet—151")).toBeVisible();
-  await expect(direct.getByRole("img", { name: "Finished Product Preview for Pikachu — Electric Bloom" })).toBeVisible();
-  await expect(direct.getByRole("dialog")).toHaveCount(0);
+  const crawlerUrl = new URL(href!, process.env.CATALOG_TEST_ORIGIN ?? "http://127.0.0.1:3000");
+  crawlerUrl.searchParams.set("crawler", String(Date.now()));
+  if (process.env.CATALOG_TEST_ORIGIN) {
+    const crawlerResponse = await noScript.request.get(crawlerUrl.toString());
+    const crawlerHtml = await crawlerResponse.text();
+    expect(crawlerResponse.status()).toBe(200);
+    expect(crawlerHtml).toContain('<h1 id="product-heading">Pikachu — Electric Bloom</h1>');
+    expect(crawlerHtml).toContain("Scarlet &amp; Violet—151");
+    expect(crawlerHtml).not.toContain('role="dialog"');
+  } else {
+    const direct = await noScript.newPage();
+    await direct.goto(crawlerUrl.toString());
+    await expect(direct.getByRole("heading", { level: 1, name: "Pikachu — Electric Bloom" })).toBeVisible();
+    await expect(direct.getByText("Scarlet & Violet—151")).toBeVisible();
+    await expect(direct.getByRole("img", { name: "Finished Product Preview for Pikachu — Electric Bloom" })).toBeVisible();
+    await expect(direct.getByRole("dialog")).toHaveCount(0);
+  }
 
   await noScript.close();
 
@@ -336,7 +330,8 @@ test("renders and refines a responsive deterministic 500-product shelf accessibl
 
   const localRequests: string[] = [];
   page.on("request", (request) => {
-    if (request.resourceType() !== "image") localRequests.push(request.url());
+    const url = request.url();
+    if (request.resourceType() !== "image" && !url.startsWith("https://vercel.live/") && url !== page.url()) localRequests.push(url);
   });
   const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
   await search.fill("catalog-test /010");

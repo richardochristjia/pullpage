@@ -1,0 +1,9 @@
+drop trigger if exists product_preview_rights_99_invalidate on catalog_private.product_preview_rights;
+create trigger product_preview_rights_99_invalidate
+after insert or update or delete on catalog_private.product_preview_rights
+for each statement execute function catalog_private.enqueue_catalog_invalidation();
+
+drop trigger if exists product_preview_configuration_99_invalidate on catalog_private.product_preview_configuration;
+create trigger product_preview_configuration_99_invalidate
+after insert or update or delete on catalog_private.product_preview_configuration
+for each statement execute function catalog_private.enqueue_catalog_invalidation();

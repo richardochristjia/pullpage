@@ -1,0 +1,72 @@
+import dotenv from "dotenv";
+import pg from "pg";
+import { buildSyntheticCatalogFixtures } from "../src/catalog/synthetic-fixtures.ts";
+import { assertCatalogDatabaseOperation } from "../src/catalog/environment-policy.ts";
+
+dotenv.config({ path: ".env.promotion.local", quiet: true });
+dotenv.config({ path: ".env.local", quiet: true });
+const environment = process.env.CATALOG_SEED_ENVIRONMENT;
+if (environment !== "local" && environment !== "preview" && environment !== "production") throw new Error("CATALOG_SEED_ENVIRONMENT must identify local, preview, or production");
+assertCatalogDatabaseOperation({ operation: "seed", environment });
+if (process.env.CATALOG_ALLOW_SYNTHETIC_SEED !== "true") throw new Error("CATALOG_ALLOW_SYNTHETIC_SEED=true is required");
+const databaseUrl = environment === "preview" ? process.env.PREVIEW_MIGRATION_DATABASE_URL : process.env.LOCAL_MIGRATION_DATABASE_URL;
+if (!databaseUrl) throw new Error(`The ${environment} synthetic seed database URL is required`);
+
+const fixtures = buildSyntheticCatalogFixtures();
+const pool = new pg.Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10_000 });
+const client = await pool.connect();
+try {
+  await client.query("begin");
+  await client.query("set local lock_timeout = '5s'; set local statement_timeout = '60s'");
+  await client.query(`
+    insert into catalog_private.product_preview_configuration (singleton, environment_name, cloud_name, asset_folder)
+    values (true, $1, $2, $3)
+    on conflict (singleton) do update set environment_name=excluded.environment_name, cloud_name=excluded.cloud_name, asset_folder=excluded.asset_folder, updated_at=statement_timestamp()
+  `, [fixtures.configuration.environmentName, fixtures.configuration.cloudName, fixtures.configuration.assetFolder]);
+  const rights = fixtures.approvedRights;
+  await client.query(`
+    insert into catalog_private.product_preview_rights (
+      id, exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
+      permission_basis, permission_evidence, channels, territories, attribution_required,
+      effective_on, status, reviewer, reviewed_at
+    ) values ($1,$2,'synthetic-preview','Generated fixture','Pullpage fixture generator','Pullpage fixture generator',
+      'Synthetic non-production fixture','No private evidence; generated test fixture',array['preview'],array['test'],false,
+      date '2026-01-01','approved','Synthetic fixture generator',timestamptz '2026-01-01 00:00:00+00')
+    on conflict (id) do update set status=excluded.status
+  `, [rights.id, rights.exactVersionedUrl]);
+
+  const columnsPerProduct = 13;
+  const values: unknown[] = [];
+  const tuples = fixtures.products.map((product, productIndex) => {
+    const base = productIndex * columnsPerProduct;
+    values.push(product.id, "", product.cardName, product.collectorNumber, product.setName, product.rarityCode,
+      product.designName, product.formatCode, product.binderSleevePrice, product.toploaderPrice,
+      product.productPreviewUrl, product.productPreviewRightsId, product.archivedAt);
+    return `(${Array.from({ length: columnsPerProduct }, (_, column) => `$${base + column + 1}`).join(",")})`;
+  });
+  await client.query(`
+    insert into catalog_private.catalog_products (
+      id, slug, card_name, collector_number, set_name, rarity_code, design_name, format_code,
+      binder_sleeve_price, toploader_price, product_preview_url, product_preview_rights_id, archived_at
+    ) values ${tuples.join(",")}
+    on conflict (id) do update set
+      card_name=excluded.card_name, collector_number=excluded.collector_number, set_name=excluded.set_name,
+      rarity_code=excluded.rarity_code, design_name=excluded.design_name, format_code=excluded.format_code,
+      binder_sleeve_price=excluded.binder_sleeve_price, toploader_price=excluded.toploader_price,
+      product_preview_url=excluded.product_preview_url, product_preview_rights_id=excluded.product_preview_rights_id,
+      archived_at=excluded.archived_at
+  `, values);
+  const result = await client.query<{ id: string; slug: string }>(`
+    select id, slug from catalog_private.catalog_products
+    where id = any($1::uuid[]) order by id
+  `, [fixtures.products.map((product) => product.id)]);
+  if (result.rowCount !== fixtures.products.length || result.rows.some((row) => !row.slug)) throw new Error("Synthetic Catalog did not produce every generated slug");
+  await client.query("commit");
+  console.log(JSON.stringify({ environment, productCount: result.rowCount, generatedSlugsVerified: true }));
+} catch (error) {
+  await client.query("rollback");
+  throw error;
+} finally {
+  client.release();
+  await pool.end();
+}

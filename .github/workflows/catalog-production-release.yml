@@ -1,0 +1,72 @@
+name: Release Catalog Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Exact reviewed commit to release
+        required: true
+      export_reference:
+        description: Verified encrypted export evidence reference
+        required: true
+      approvers_json:
+        description: JSON array of required approvers
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-production-migration
+  cancel-in-progress: false
+
+jobs:
+  release:
+    environment: catalog-production
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PRODUCTION_MIGRATION_DATABASE_URL: ${{ secrets.PRODUCTION_MIGRATION_DATABASE_URL }}
+      PRODUCTION_CATALOG_DATABASE_URL: ${{ secrets.PRODUCTION_CATALOG_DATABASE_URL }}
+      PRODUCTION_CATALOG_REVALIDATE_SECRET: ${{ secrets.PRODUCTION_CATALOG_REVALIDATE_SECRET }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      CATALOG_RELEASE_COMMIT: ${{ inputs.release_commit }}
+      CATALOG_RELEASE_EDIT_FREEZE: "true"
+      CATALOG_RELEASE_EXPORT_REFERENCE: ${{ inputs.export_reference }}
+      CATALOG_RELEASE_APPROVERS: ${{ inputs.approvers_json }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_commit }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: test "$(git rev-parse HEAD)" = "${{ github.sha }}" && test "${{ inputs.release_commit }}" = "${{ github.sha }}"
+      - run: npm ci
+      - run: npm run catalog:verify-tooling
+      - run: npm run db:migrate:production
+      - run: CATALOG_VERIFY_DATABASE_URL="$PRODUCTION_MIGRATION_DATABASE_URL" npm run db:verify-catalog
+      - name: Deploy the matching application commit to sin1
+        run: |
+          npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx vercel build --prod --token="$VERCEL_TOKEN"
+          npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" > production-origin.txt
+          echo "CATALOG_TEST_ORIGIN=$(tail -n 1 production-origin.txt)" >> "$GITHUB_ENV"
+      - name: Production-safe smoke tests
+        env:
+          CATALOG_DATABASE_URL: ${{ secrets.PRODUCTION_CATALOG_DATABASE_URL }}
+          TEST_CATALOG_DATABASE_URL: ${{ secrets.PRODUCTION_CATALOG_DATABASE_URL }}
+          SUPABASE_ADMIN_DATABASE_URL: ${{ secrets.PRODUCTION_MIGRATION_DATABASE_URL }}
+          CATALOG_REVALIDATE_SECRET: ${{ secrets.PRODUCTION_CATALOG_REVALIDATE_SECRET }}
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:integration
+          npx playwright test tests/e2e/archive-restore.spec.ts tests/e2e/catalog-recovery.spec.ts tests/e2e/catalog.spec.ts tests/e2e/discoverability.spec.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalog-production-release-${{ github.sha }}
+          path: production-origin.txt
+          retention-days: 90

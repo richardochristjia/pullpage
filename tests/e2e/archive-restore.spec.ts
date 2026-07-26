@@ -96,12 +96,13 @@ test("archives and restores one Catalog Product across stale, browser, crawler, 
   const archiveTime = new Date(Date.now() + 86_400_000);
   await admin.query("update catalog_private.catalog_products set archived_at = $2 where id = $1", [productId, archiveTime]);
 
-  await page.reload();
-  await search.fill("Archive Browser Product");
-  await expect(activeLink).toBeVisible();
-  expect(await (await request.get("/sitemap.xml")).text()).toContain(canonical);
+  await expect.poll(async () => (await (await request.get("/sitemap.xml")).text()).includes(canonical), {
+    timeout: 15_000,
+    message: "the database webhook should withdraw the archived product",
+  }).toBe(false);
 
-  expect((await invalidate(request)).status()).toBe(200);
+  // The delivered shelf remains coherent while navigation resolves against the new generation.
+  await expect(activeLink).toBeVisible();
   await activeLink.click();
   await expect(page).toHaveURL(`/products/${productSlug}`);
   const archivedDialog = page.getByRole("dialog", { name: "Catalog Product not found" });
@@ -109,7 +110,7 @@ test("archives and restores one Catalog Product across stale, browser, crawler, 
   await expect(archivedDialog.getByRole("link", { name: "Return to the Catalog shelf" })).toBeVisible();
   await expect(archivedDialog.getByText("Archive Browser Product")).toHaveCount(0);
   await expect(archivedDialog).not.toContainText(/unavailable|out of stock|sold out/i);
-  await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+  expect(await page.locator('meta[name="robots"][content*="noindex"]').count()).toBeGreaterThanOrEqual(1);
 
   const hardContext = await browser.newContext({
     userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",

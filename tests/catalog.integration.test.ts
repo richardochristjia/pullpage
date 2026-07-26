@@ -395,7 +395,7 @@ integration("Catalog database seam", () => {
       expect(edited.rows[0].updated_at.getTime()).toBeGreaterThanOrEqual(product.updated_at.getTime());
 
       const fallback = await admin.query<{ id: string; slug: string }>(
-        "insert into catalog_private.catalog_products (format_code, binder_sleeve_price) values ('BS', 1) returning id, slug",
+        "insert into catalog_private.catalog_products (set_name, format_code, binder_sleeve_price) values ('Fallback Slug Probe', 'BS', 1) returning id, slug",
       );
       expect(fallback.rows[0].slug).toMatch(/^catalog-product-[a-f0-9]{8}$/);
       await admin.query("delete from catalog_private.catalog_products where id = $1", [fallback.rows[0].id]);
