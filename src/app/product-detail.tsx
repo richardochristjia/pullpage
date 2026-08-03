@@ -1,8 +1,10 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import { productDiscoverability } from "@/catalog/discoverability";
 import { displayCatalogValue } from "@/catalog/presentation";
-import { ProductPreview } from "./product-preview";
+import { Badge } from "@/components/ui/badge";
+import { ProductPreviewLightbox } from "./product-preview-lightbox";
 import { ShareProduct } from "./share-product";
 import styles from "./product-detail.module.css";
 
@@ -24,19 +26,18 @@ export function ProductDetail({ product, headingId, modal = false }: {
 }) {
   const Heading = modal ? "h2" : "h1";
   const discoverability = productDiscoverability(product);
+  const previewAlt = `Finished Product Preview for ${productHeading(product)}`;
+
   return (
     <article className={styles.detail}>
-      <ProductPreview
-        url={product.previewUrl}
-        alt={`Finished Product Preview for ${productHeading(product)}`}
-        sizes="(max-width: 700px) calc(100vw - 32px), 420px"
-      />
+      <ProductPreviewLightbox url={product.previewUrl} alt={previewAlt} />
       <div className={styles.content}>
         <p className={styles.eyebrow}>Catalog Product</p>
         <Heading id={headingId}>{productHeading(product)}</Heading>
-        <p className={styles.identity}>
-          {displayCatalogValue(product.collectorNumber, "Unknown number")} · {displayCatalogValue(product.rarity, "Unknown rarity")}
-        </p>
+        <div className={styles.identityBadges}>
+          <Badge variant="secondary">{displayCatalogValue(product.rarity, "Unknown rarity")}</Badge>
+          <Badge variant="outline">{displayCatalogValue(product.collectorNumber, "Unknown number")}</Badge>
+        </div>
         <dl className={styles.facts}>
           <div><dt>Set Name</dt><dd>{displayCatalogValue(product.setName, "Unknown set")}</dd></div>
           <div><dt>Collector Number</dt><dd>{displayCatalogValue(product.collectorNumber, "Unknown number")}</dd></div>
@@ -45,12 +46,14 @@ export function ProductDetail({ product, headingId, modal = false }: {
         </dl>
         <section className={styles.options} aria-labelledby={`${headingId}-formats`}>
           <h2 id={`${headingId}-formats`}>Supported Binder Formats</h2>
-          {product.formatOptions.map((option) => (
-            <div key={option.format}><span>{option.format}</span><strong>{idr.format(option.price)}</strong></div>
-          ))}
+          <div className={styles.optionGrid}>
+            {product.formatOptions.map((option) => (
+              <div key={option.format}><span>{option.format}</span><strong>{idr.format(option.price)}</strong></div>
+            ))}
+          </div>
         </section>
         <ShareProduct canonical={discoverability.canonical} title={discoverability.documentTitle} />
-        <Link className={styles.shelfLink} href="/">Back to the Catalog shelf</Link>
+        <Link className={styles.shelfLink} href="/"><ArrowLeft aria-hidden="true" /> Back to the Catalog</Link>
       </div>
     </article>
   );

@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Outfit, Work_Sans } from "next/font/google";
 import { catalogCanonical, indexingPolicy, PRODUCTION_ORIGIN, SOCIAL_FALLBACK_URL } from "@/catalog/discoverability";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
+
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const workSans = Work_Sans({ subsets: ["latin"], variable: "--font-work-sans" });
 
 const description = "Browse Pullpage's read-only catalog of extended card art for card binders.";
 const socialImage = {
@@ -46,13 +53,18 @@ export default function RootLayout({
   modal: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
-        <div id="app-content">
-          <a className="skip-link" href="#main-content">Skip to main content</a>
-          {children}
-        </div>
-        {modal}
+    <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${workSans.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <ThemeProvider>
+          <TooltipProvider>
+            <div id="app-content">
+              <a className="skip-link" href="#main-content">Skip to main content</a>
+              {children}
+            </div>
+            {modal}
+            <Toaster position="bottom-center" />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

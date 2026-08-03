@@ -10,7 +10,7 @@ test("browses the hosted-compatible Catalog without issuing writes", async ({ pa
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", productionOrigin);
-  await expect(page.getByRole("heading", { level: 1, name: "The Pullpage Catalog" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Art that completes the page." })).toBeVisible();
   await expect(page.getByRole("status")).not.toHaveText(/Loading Catalog Products/);
 
   const productLinks = page.locator('a[href^="/products/"]');

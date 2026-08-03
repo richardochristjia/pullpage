@@ -9,6 +9,19 @@ const onePixelPng = Buffer.from(
 test("searches, filters, sorts, and opens the deterministic local Catalog accessibly", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("status")).toHaveText("480 results");
+  await expect(page.locator("[data-product-slug]")).toHaveCount(24);
+  await page.getByRole("button", { name: "Load more Catalog Products" }).click();
+  await expect(page.locator("[data-product-slug]")).toHaveCount(48);
+
+  await page.getByRole("button", { name: "Collapse catalog filters" }).click();
+  await expect(page.getByRole("button", { name: "Expand catalog filters" })).toBeVisible();
+  await page.getByRole("button", { name: "Expand catalog filters" }).click();
+
+  const gridView = page.getByRole("radio", { name: "Grid view" });
+  const listView = page.getByRole("radio", { name: "List view" });
+  await expect(gridView).toBeChecked();
+  await listView.click();
+  await expect(page).toHaveURL(/view=list/);
 
   const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
   await search.fill("pika-chu");
@@ -23,23 +36,32 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   await expect(page.getByRole("button", { name: "Close product details" })).toBeFocused();
   await expect(page.locator("#app-content")).toHaveAttribute("inert", "");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await dialog.getByRole("button", { name: "View full image" }).click();
+  await expect(page.getByRole("dialog", { name: "Full Product Preview" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page).toHaveURL("/");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect.poll(() => new URL(page.url()).searchParams.get("q")).toBe("pika-chu");
   await expect(search).toHaveValue("pika-chu");
   await expect(pikachu).toBeFocused();
 
   await search.fill("does-not-exist");
   await expect(page.getByRole("heading", { name: "No Catalog Products match" })).toBeVisible();
-  await page.getByRole("button", { name: "Reset filters" }).last().click();
+  await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByRole("status")).toHaveText("480 results");
 
   await page.getByRole("checkbox", { name: "AR", exact: true }).check();
-  await page.getByRole("checkbox", { name: "Toploader" }).check();
+  await page.getByRole("radio", { name: "Toploader" }).click();
   await page.getByRole("spinbutton", { name: "Minimum" }).fill("70000");
   await page.getByRole("spinbutton", { name: "Maximum" }).fill("70500");
   await expect(page.getByRole("status")).not.toHaveText("0 results");
-  await page.getByRole("combobox", { name: "Sort by" }).selectOption("price-desc");
-  expect(new URL(page.url()).search).toBe("");
+  await page.getByRole("combobox", { name: "Sort by" }).click();
+  await page.getByRole("option", { name: "Price: high to low" }).click();
+  const viewState = new URL(page.url()).searchParams;
+  expect(viewState.get("format")).toBe("toploader");
+  expect(viewState.get("sort")).toBe("price-desc");
+  expect(viewState.get("min")).toBe("70000");
+  expect(viewState.get("max")).toBe("70500");
 });
 
 test("renders missing optional facts and excludes inactive Catalog Products", async ({ page }) => {
@@ -66,6 +88,7 @@ test("delivers an HTTPS Product Preview directly and falls back after failed del
   const product = page.getByRole("link", { name: /Catalog Test 004.*synthetic-browser-4/ });
   const image = product.locator("img");
   await expect(image).toBeVisible();
+  await expect(image).toHaveCSS("object-fit", "contain");
   const source = await image.getAttribute("src");
   expect(source).toMatch(/^https:\/\/res[.]cloudinary[.]com\//);
   expect(source).not.toContain("/_next/image");
@@ -83,11 +106,26 @@ test("delivers an HTTPS Product Preview directly and falls back after failed del
   expect(failedAttempts).toBe(1);
 });
 
+test("defaults to dark and persists the visitor's light theme", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(page.locator("html")).toHaveClass(/light/);
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/light/);
+});
+
 test("keeps the responsive Catalog within narrow viewports", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
   await expect(page.getByRole("searchbox", { name: "Search Catalog Products" })).toBeVisible();
-  await expect(page.getByText("Filters and sort")).toBeVisible();
+  await page.getByRole("button", { name: "Filters" }).click();
+  const filters = page.getByRole("dialog", { name: "Filter Catalog Products" });
+  await expect(filters).toBeVisible();
+  await filters.getByRole("radio", { name: "Toploader" }).click();
+  await filters.getByRole("button", { name: /Show \d+ products/ }).click();
+  await expect(filters).toBeHidden();
+  await expect.poll(() => new URL(page.url()).searchParams.get("format")).toBe("toploader");
 
   const overflowingElements = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>("body *")]
     .filter((element) => element.getBoundingClientRect().right > window.innerWidth + 1)
@@ -96,5 +134,6 @@ test("keeps the responsive Catalog within narrow viewports", async ({ page }) =>
   expect(await overflowingElements()).toEqual([]);
 
   await page.setViewportSize({ width: 812, height: 375 });
+  await page.waitForTimeout(250);
   expect(await overflowingElements()).toEqual([]);
 });

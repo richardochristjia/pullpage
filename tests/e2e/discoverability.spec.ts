@@ -60,7 +60,7 @@ test("shares the production canonical and preserves a manual clipboard fallback"
   await page.getByRole("searchbox", { name: "Search Catalog Products" }).fill("pikachu");
   await page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ }).click();
   const dialog = page.getByRole("dialog", { name: "Pikachu — Electric Bloom" });
-  const share = dialog.getByRole("button", { name: "Share Catalog Product" });
+  const share = dialog.getByRole("button", { name: "Share" });
   await share.click();
 
   const shared = await page.evaluate(() => (window as typeof window & { shared?: ShareData }).shared);
@@ -69,10 +69,9 @@ test("shares the production canonical and preserves a manual clipboard fallback"
 
   await page.evaluate(() => {
     (window as typeof window & { shareMode: "native" | "clipboard-failure" }).shareMode = "clipboard-failure";
-    Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
   });
-  await share.click();
-  await expect(dialog.getByRole("status")).toHaveText("Clipboard access failed. Copy the canonical link manually below.");
+  await dialog.getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByText("Clipboard access failed. Copy the link manually.")).toBeVisible();
   await expect(dialog.getByRole("textbox", { name: "Canonical product link" })).toHaveValue(
     /^https:\/\/pullpage[.]vercel[.]app\/products\/pikachu-[a-z0-9-]+$/,
   );

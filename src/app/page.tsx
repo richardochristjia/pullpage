@@ -1,55 +1,62 @@
-import Image from "next/image";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getCatalog } from "@/catalog/catalog";
+import { catalogStateFromSearchParams, type CatalogUrlState } from "@/catalog/interactions";
+import { SiteHeader } from "@/components/site-header";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogBrowser } from "./catalog-ui";
 import styles from "./catalog.module.css";
 
-async function CatalogShelf() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function toUrlSearchParams(values: Awaited<SearchParams>) {
+  const params = new URLSearchParams();
+  Object.entries(values).forEach(([key, value]) => {
+    if (Array.isArray(value)) value.forEach((item) => params.append(key, item));
+    else if (value !== undefined) params.set(key, value);
+  });
+  return params;
+}
+
+async function CatalogShelf({ searchParams }: { searchParams: SearchParams }) {
   await connection();
-  return <CatalogBrowser products={await getCatalog()} />;
+  const initialState: CatalogUrlState = catalogStateFromSearchParams(toUrlSearchParams(await searchParams));
+  return <CatalogBrowser products={await getCatalog()} initialState={initialState} />;
 }
 
 function CatalogShelfLoading() {
   return (
     <section className={styles.loadingShelf} aria-labelledby="catalog-loading-heading">
-      <h2 id="catalog-loading-heading">Catalog Products</h2>
-      <p role="status" aria-live="polite">Loading Catalog Products…</p>
-      <div className={styles.browserGrid}>
-        <aside className={styles.sidebar} aria-label="Catalog discovery controls loading">
-          <label className={styles.searchLabel}>
-            <span>Search Catalog Products</span>
-            <input type="search" disabled placeholder="Available when loading finishes" />
-          </label>
-          <p>Filters and sort will be available with the Catalog Products.</p>
-        </aside>
-        <div className={styles.loadingRows} aria-hidden="true"><span /><span /><span /></div>
+      <div className={styles.shelfHeading}>
+        <div>
+          <p className={styles.eyebrow}>Current collection</p>
+          <h2 id="catalog-loading-heading">Catalog Products</h2>
+        </div>
+        <p role="status" aria-live="polite">Loading Catalog Products…</p>
+      </div>
+      <div className={styles.discoveryBar}>
+        <Input type="search" disabled aria-label="Search Catalog Products" placeholder="Available when loading finishes" />
+      </div>
+      <div className={styles.loadingGrid} aria-hidden="true">
+        {Array.from({ length: 8 }, (_, index) => <Skeleton key={index} className={styles.loadingCard} />)}
       </div>
     </section>
   );
 }
 
-export default function Home() {
+export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className={styles.catalog}>
-      <header className={styles.header}>
-        <Image
-          src="/pullpage_logo.png"
-          width={132}
-          height={54}
-          priority
-          alt="Pullpage — Pull The Art. Own The Page."
-        />
-        <p>Extended art for collectors · Indonesia</p>
-      </header>
+      <SiteHeader />
       <main id="main-content">
         <section className={styles.intro}>
-          <p className={styles.eyebrow}>Pull the art. Own the page.</p>
-          <h1>The Pullpage Catalog</h1>
-          <p>Extended-art surrounds made to turn a favorite card into a full-page moment.</p>
+          <p className={styles.eyebrow}>The Pullpage collection</p>
+          <h1>Art that completes the page.</h1>
+          <p>Discover extended-art surrounds designed to turn a favorite Pokémon card into a full-page moment.</p>
         </section>
         <Suspense fallback={<CatalogShelfLoading />}>
-          <CatalogShelf />
+          <CatalogShelf searchParams={searchParams} />
         </Suspense>
       </main>
     </div>

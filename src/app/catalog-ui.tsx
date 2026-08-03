@@ -1,15 +1,31 @@
 "use client";
 
+import { Grid2X2, List, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import {
   applyCatalogView,
+  CATALOG_PAGE_SIZE,
+  catalogStartingPrice,
+  catalogStateFromSearchParams,
+  catalogStateToSearchParams,
+  INITIAL_CATALOG_STATE,
   UNKNOWN_RARITY_FILTER,
+  type CatalogFormatFilter,
   type CatalogSort,
-  type CatalogViewState,
+  type CatalogUrlState,
 } from "@/catalog/interactions";
 import { displayCatalogValue } from "@/catalog/presentation";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import styles from "./catalog.module.css";
 import { ProductPreview } from "./product-preview";
 
@@ -19,10 +35,33 @@ const idr = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,
 });
 
-export function CatalogShelfRow({ product }: { product: PublicCatalogProduct }) {
+const FORMAT_LABELS: Record<CatalogFormatFilter, string> = {
+  any: "Any format",
+  "binder-sleeve": "Binder Sleeve",
+  toploader: "Toploader",
+  both: "Both formats",
+};
+
+type FilterState = Pick<CatalogUrlState, "rarities" | "format" | "minimumPrice" | "maximumPrice">;
+
+type ProductItemProps = {
+  product: PublicCatalogProduct;
+  view: CatalogUrlState["view"];
+  format: CatalogFormatFilter;
+};
+
+function numberOrNull(value: string) {
+  if (value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function CatalogProductItem({ product, view, format }: ProductItemProps) {
   const cardName = displayCatalogValue(product.cardName, "No Name");
   const collectorNumber = displayCatalogValue(product.collectorNumber, "Unknown number");
   const accessibleName = [cardName, collectorNumber, product.designName].filter(Boolean).join(" — ");
+  const startingPrice = catalogStartingPrice(product, format);
+  const multiplePrices = format === "any" && product.formatOptions.length > 1 || format === "both";
 
   return (
     <Link
@@ -32,57 +71,180 @@ export function CatalogShelfRow({ product }: { product: PublicCatalogProduct }) 
       prefetch={false}
       aria-label={accessibleName}
       data-product-slug={product.slug}
+      data-view={view}
     >
-      <article className={styles.product} aria-label={`${cardName} ${collectorNumber}`}>
+      <article className={view === "grid" ? styles.productCard : styles.productRow}>
         <ProductPreview
           url={product.previewUrl}
           alt=""
-          sizes="(max-width: 440px) 92px, (max-width: 900px) 116px, 138px"
+          sizes={view === "grid"
+            ? "(max-width: 520px) 44vw, (max-width: 980px) 30vw, 280px"
+            : "(max-width: 640px) 84px, 112px"}
         />
-        <div className={styles.identity}>
-          <div className={styles.kicker}>
-            <span>{displayCatalogValue(product.rarity, "Unknown rarity")}</span>
-            <span>{collectorNumber}</span>
+        <div className={styles.productIdentity}>
+          <div className={styles.productBadges}>
+            <Badge variant="secondary">{displayCatalogValue(product.rarity, "Unknown rarity")}</Badge>
+            {product.formatOptions.map(({ format: optionFormat }) => (
+              <Badge key={optionFormat} variant="outline">{optionFormat}</Badge>
+            ))}
           </div>
-          <h2>{cardName}</h2>
-          {product.designName && <p className={styles.design}>{product.designName}</p>}
-          <dl className={styles.facts}>
-            <div><dt>Set</dt><dd>{displayCatalogValue(product.setName, "Unknown set")}</dd></div>
-            <div><dt>Collector number</dt><dd>{collectorNumber}</dd></div>
-          </dl>
-        </div>
-        <div className={styles.formats}>
-          <p>Supported Binder Formats</p>
-          {product.formatOptions.map((option) => (
-            <div key={option.format} className={styles.formatOption}>
-              <span>{option.format}</span>
-              <strong>{idr.format(option.price)}</strong>
+          <h3>{cardName}</h3>
+          {product.designName && <p className={styles.designName}>{product.designName}</p>}
+          <p className={styles.cardMeta}>{collectorNumber}<span aria-hidden="true"> · </span>{displayCatalogValue(product.setName, "Unknown set")}</p>
+          {view === "grid" ? (
+            <div className={styles.startingPrice}>
+              <span>{multiplePrices ? "From" : FORMAT_LABELS[format] === "Any format" ? "Price" : FORMAT_LABELS[format]}</span>
+              <strong>{idr.format(startingPrice)}</strong>
             </div>
-          ))}
+          ) : (
+            <div className={styles.rowPrices} aria-label="Format Options">
+              {product.formatOptions.map((option) => (
+                <div key={option.format}><span>{option.format}</span><strong>{idr.format(option.price)}</strong></div>
+              ))}
+            </div>
+          )}
         </div>
       </article>
     </Link>
   );
 }
 
-const initialState: CatalogViewState = {
-  query: "",
-  rarities: [],
-  formats: [],
-  minimumPrice: null,
-  maximumPrice: null,
-  sort: "card-asc",
-};
+function FilterFields({
+  value,
+  rarities,
+  onChange,
+  idPrefix,
+}: {
+  value: FilterState;
+  rarities: string[];
+  onChange: (next: FilterState) => void;
+  idPrefix: string;
+}) {
+  const toggleRarity = (rarity: string) => onChange({
+    ...value,
+    rarities: value.rarities.includes(rarity)
+      ? value.rarities.filter((item) => item !== rarity)
+      : [...value.rarities, rarity],
+  });
 
-function numberOrNull(value: string) {
-  if (value === "") return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  return (
+    <div className={styles.filterFields}>
+      <fieldset>
+        <legend>Rarity</legend>
+        <div className={styles.checkboxGrid}>
+          {[...rarities, UNKNOWN_RARITY_FILTER].map((rarity) => {
+            const label = rarity === UNKNOWN_RARITY_FILTER ? "Unknown rarity" : rarity;
+            const id = `${idPrefix}-rarity-${rarity.replaceAll("_", "-")}`;
+            return (
+              <label key={rarity} htmlFor={id}>
+                <Checkbox id={id} checked={value.rarities.includes(rarity)} onCheckedChange={() => toggleRarity(rarity)} />
+                <span>{label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Supported Binder Format</legend>
+        <RadioGroup value={value.format} onValueChange={(format) => onChange({ ...value, format: format as CatalogFormatFilter })}>
+          {(Object.entries(FORMAT_LABELS) as [CatalogFormatFilter, string][]).map(([format, label]) => (
+            <label key={format} htmlFor={`${idPrefix}-format-${format}`}>
+              <RadioGroupItem id={`${idPrefix}-format-${format}`} value={format} />
+              <span>{label}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </fieldset>
+
+      <fieldset>
+        <legend>Starting Price in IDR</legend>
+        <div className={styles.priceFields}>
+          <label>
+            <span>Minimum</span>
+            <Input
+              inputMode="numeric"
+              type="number"
+              min="1"
+              value={value.minimumPrice ?? ""}
+              onChange={(event) => onChange({ ...value, minimumPrice: numberOrNull(event.target.value) })}
+              placeholder="Rp 0"
+            />
+          </label>
+          <label>
+            <span>Maximum</span>
+            <Input
+              inputMode="numeric"
+              type="number"
+              min="1"
+              value={value.maximumPrice ?? ""}
+              onChange={(event) => onChange({ ...value, maximumPrice: numberOrNull(event.target.value) })}
+              placeholder="No limit"
+            />
+          </label>
+        </div>
+      </fieldset>
+    </div>
+  );
 }
 
-export function CatalogBrowser({ products }: { products: PublicCatalogProduct[] }) {
-  const [state, setState] = useState(initialState);
+function MobileFilters({
+  products,
+  state,
+  rarities,
+  apply,
+}: {
+  products: PublicCatalogProduct[];
+  state: CatalogUrlState;
+  rarities: string[];
+  apply: (filters: FilterState) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<FilterState>(state);
+  const draftCount = useMemo(() => applyCatalogView(products, { ...state, ...draft }).length, [draft, products, state]);
+
+  function setSheetOpen(next: boolean) {
+    if (next) setDraft(state);
+    setOpen(next);
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={setSheetOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline" className={styles.mobileFilterButton}>
+          <SlidersHorizontal aria-hidden="true" /> Filters
+        </Button>
+      </SheetTrigger>
+      <SheetContent className={styles.filterSheet} aria-describedby="mobile-filter-description">
+        <SheetHeader>
+          <SheetTitle>Filter Catalog Products</SheetTitle>
+          <SheetDescription id="mobile-filter-description">Narrow the collection, then apply your choices.</SheetDescription>
+        </SheetHeader>
+        <div className={styles.sheetScroller}>
+          <FilterFields value={draft} rarities={rarities} onChange={setDraft} idPrefix="mobile" />
+        </div>
+        <SheetFooter className={styles.sheetFooter}>
+          <Button variant="ghost" onClick={() => setDraft({
+            rarities: [], format: "any", minimumPrice: null, maximumPrice: null,
+          })}>Clear all</Button>
+          <Button onClick={() => { apply(draft); setOpen(false); }}>Show {draftCount} products</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+export function CatalogBrowser({
+  products,
+  initialState = INITIAL_CATALOG_STATE,
+}: {
+  products: PublicCatalogProduct[];
+  initialState?: CatalogUrlState;
+}) {
+  const [state, setState] = useState<CatalogUrlState>(initialState);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const visible = useMemo(() => applyCatalogView(products, state), [products, state]);
+  const rendered = visible.slice(0, state.visibleCount);
   const rarities = useMemo(() => [
     ...products
       .filter((product) => product.rarity !== null)
@@ -91,14 +253,38 @@ export function CatalogBrowser({ products }: { products: PublicCatalogProduct[] 
   ].filter((rarity, index, values) => values.indexOf(rarity) === index), [products]);
   const resultLabel = `${visible.length} ${visible.length === 1 ? "result" : "results"}`;
 
+  useEffect(() => {
+    const restoreFromUrl = () => setState(catalogStateFromSearchParams(new URLSearchParams(window.location.search)));
+    window.addEventListener("popstate", restoreFromUrl);
+    return () => window.removeEventListener("popstate", restoreFromUrl);
+  }, []);
+
+  function commit(next: CatalogUrlState) {
+    setState(next);
+    const params = catalogStateToSearchParams(next);
+    const query = params.size > 0 ? `?${params.toString()}` : window.location.pathname;
+    window.history.replaceState(null, "", query);
+  }
+
+  function patch(values: Partial<CatalogUrlState>, resetCount = true) {
+    commit({ ...state, ...values, ...(resetCount ? { visibleCount: CATALOG_PAGE_SIZE } : {}) });
+  }
+
+  function clearDiscovery() {
+    commit({ ...INITIAL_CATALOG_STATE, sort: state.sort, view: state.view });
+  }
+
+  const filterState: FilterState = state;
+  const hasDiscovery = Boolean(
+    state.query || state.rarities.length || state.format !== "any" ||
+    state.minimumPrice !== null || state.maximumPrice !== null,
+  );
+
   if (products.length === 0) {
     return (
       <section className={styles.shelf} aria-labelledby="catalog-heading">
         <div className={styles.shelfHeading}>
-          <div>
-            <p className={styles.eyebrow}>Current collection</p>
-            <h2 id="catalog-heading">Catalog Products</h2>
-          </div>
+          <div><p className={styles.eyebrow}>Current collection</p><h2 id="catalog-heading">Catalog Products</h2></div>
           <p role="status" aria-live="polite" aria-atomic="true">0 results</p>
         </div>
         <div className={styles.emptyState}>
@@ -110,102 +296,138 @@ export function CatalogBrowser({ products }: { products: PublicCatalogProduct[] 
     );
   }
 
-  const toggleRarity = (rarity: string) => setState((current) => ({
-    ...current,
-    rarities: current.rarities.includes(rarity)
-      ? current.rarities.filter((item) => item !== rarity)
-      : [...current.rarities, rarity],
-  }));
-  const toggleFormat = (format: CatalogViewState["formats"][number]) => setState((current) => ({
-    ...current,
-    formats: current.formats.includes(format)
-      ? current.formats.filter((item) => item !== format)
-      : [...current.formats, format],
-  }));
-
   return (
     <section className={styles.shelf} aria-labelledby="catalog-heading">
       <div className={styles.shelfHeading}>
-        <div>
-          <p className={styles.eyebrow}>Current collection</p>
-          <h2 id="catalog-heading">Catalog Products</h2>
-        </div>
+        <div><p className={styles.eyebrow}>Current collection</p><h2 id="catalog-heading">Catalog Products</h2></div>
         <p role="status" aria-live="polite" aria-atomic="true">{resultLabel}</p>
       </div>
 
-      <div className={styles.browserGrid}>
-        <aside className={styles.sidebar} aria-label="Catalog discovery controls">
-          <label className={styles.searchLabel}>
-            <span>Search Catalog Products</span>
-            <input
-              type="search"
-              value={state.query}
-              onChange={(event) => setState({ ...state, query: event.target.value })}
-              placeholder="Name, number, set, or design"
-            />
-          </label>
-          <details className={styles.filterDetails} open>
-            <summary>Filters and sort</summary>
-            <div className={styles.controlStack}>
-              <fieldset>
-                <legend>Rarity</legend>
-                {[...rarities, UNKNOWN_RARITY_FILTER].map((rarity) => (
-                  <label key={rarity}>
-                    <input
-                      type="checkbox"
-                      checked={state.rarities.includes(rarity)}
-                      onChange={() => toggleRarity(rarity)}
-                    />
-                    {rarity === UNKNOWN_RARITY_FILTER ? "Unknown rarity" : rarity}
-                  </label>
-                ))}
-              </fieldset>
-              <fieldset>
-                <legend>Supported Binder Formats</legend>
-                {(["Binder Sleeve", "Toploader"] as const).map((format) => (
-                  <label key={format}>
-                    <input
-                      type="checkbox"
-                      checked={state.formats.includes(format)}
-                      onChange={() => toggleFormat(format)}
-                    />
-                    {format}
-                  </label>
-                ))}
-              </fieldset>
-              <fieldset className={styles.priceFields}>
-                <legend>Price in IDR</legend>
-                <label>Minimum<input inputMode="numeric" type="number" min="1" value={state.minimumPrice ?? ""} onChange={(event) => setState({ ...state, minimumPrice: numberOrNull(event.target.value) })} /></label>
-                <label>Maximum<input inputMode="numeric" type="number" min="1" value={state.maximumPrice ?? ""} onChange={(event) => setState({ ...state, maximumPrice: numberOrNull(event.target.value) })} /></label>
-              </fieldset>
-              <label className={styles.sortLabel}>Sort by
-                <select value={state.sort} onChange={(event) => setState({ ...state, sort: event.target.value as CatalogSort })}>
-                  <option value="card-asc">Card Name: A–Z</option>
-                  <option value="card-desc">Card Name: Z–A</option>
-                  <option value="price-asc">Price: low to high</option>
-                  <option value="price-desc">Price: high to low</option>
-                  <option value="rarity-asc">Rarity: low to high</option>
-                  <option value="rarity-desc">Rarity: high to low</option>
-                </select>
-              </label>
-              <button className={styles.resetButton} type="button" onClick={() => setState(initialState)}>Reset filters</button>
+      <div className={styles.discoveryBar}>
+        <label className={styles.searchField}>
+          <span className="sr-only">Search Catalog Products</span>
+          <Search aria-hidden="true" />
+          <Input
+            type="search"
+            value={state.query}
+            onChange={(event) => patch({ query: event.target.value })}
+            placeholder="Search name, number, set, or design"
+          />
+        </label>
+        <MobileFilters
+          products={products}
+          state={state}
+          rarities={rarities}
+          apply={(filters) => patch(filters)}
+        />
+        <label className={styles.sortControl}>
+          <span>Sort by</span>
+          <Select value={state.sort} onValueChange={(sort) => patch({ sort: sort as CatalogSort })}>
+            <SelectTrigger aria-label="Sort by"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="card-asc">Card Name: A–Z</SelectItem>
+              <SelectItem value="card-desc">Card Name: Z–A</SelectItem>
+              <SelectItem value="price-asc">Price: low to high</SelectItem>
+              <SelectItem value="price-desc">Price: high to low</SelectItem>
+              <SelectItem value="rarity-asc">Rarity: low to high</SelectItem>
+              <SelectItem value="rarity-desc">Rarity: high to low</SelectItem>
+            </SelectContent>
+          </Select>
+        </label>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroup
+              type="single"
+              value={state.view}
+              onValueChange={(view) => view && patch({ view: view as CatalogUrlState["view"] }, false)}
+              variant="outline"
+              spacing={0}
+              aria-label="Catalog view"
+            >
+              <ToggleGroupItem value="grid" aria-label="Grid view"><Grid2X2 aria-hidden="true" /></ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view"><List aria-hidden="true" /></ToggleGroupItem>
+            </ToggleGroup>
+          </TooltipTrigger>
+          <TooltipContent>Change catalog view</TooltipContent>
+        </Tooltip>
+      </div>
+
+      {hasDiscovery && (
+        <div className={styles.activeFilters} aria-label="Active filters">
+          {state.query && <FilterBadge label={`Search: ${state.query}`} remove={() => patch({ query: "" })} />}
+          {state.rarities.map((rarity) => <FilterBadge key={rarity} label={rarity === UNKNOWN_RARITY_FILTER ? "Unknown rarity" : rarity} remove={() => patch({ rarities: state.rarities.filter((item) => item !== rarity) })} />)}
+          {state.format !== "any" && <FilterBadge label={FORMAT_LABELS[state.format]} remove={() => patch({ format: "any" })} />}
+          {state.minimumPrice !== null && <FilterBadge label={`Min ${idr.format(state.minimumPrice)}`} remove={() => patch({ minimumPrice: null })} />}
+          {state.maximumPrice !== null && <FilterBadge label={`Max ${idr.format(state.maximumPrice)}`} remove={() => patch({ maximumPrice: null })} />}
+          <Button variant="ghost" size="sm" onClick={clearDiscovery}><RotateCcw aria-hidden="true" /> Clear all</Button>
+        </div>
+      )}
+
+      <div className={`${styles.browserGrid} ${filtersCollapsed ? styles.filtersCollapsed : ""}`}>
+        <aside className={`${styles.sidebar} ${filtersCollapsed ? styles.sidebarCollapsed : ""}`} aria-label="Catalog filters">
+          <div className={styles.sidebarHeading}>
+            {!filtersCollapsed && <h3>Filters</h3>}
+            <div className={styles.sidebarActions}>
+              {!filtersCollapsed && hasDiscovery && <Button variant="ghost" size="sm" onClick={clearDiscovery}>Clear</Button>}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-expanded={!filtersCollapsed}
+                    aria-label={filtersCollapsed ? "Expand catalog filters" : "Collapse catalog filters"}
+                    onClick={() => setFiltersCollapsed((collapsed) => !collapsed)}
+                  >
+                    {filtersCollapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{filtersCollapsed ? "Expand filters" : "Collapse filters"}</TooltipContent>
+              </Tooltip>
             </div>
-          </details>
+          </div>
+          {!filtersCollapsed && <FilterFields value={filterState} rarities={rarities} onChange={(filters) => patch(filters)} idPrefix="desktop" />}
         </aside>
 
         <div className={styles.results}>
           {visible.length === 0 ? (
             <div className={styles.emptyState}>
-              <p className={styles.eyebrow}>Nothing hidden, nothing removed</p>
+              <p className={styles.eyebrow}>Try another combination</p>
               <h2>No Catalog Products match</h2>
-              <p>Adjust your search or filters, or reset everything to return to the full shelf.</p>
-              <button className={styles.resetButton} type="button" onClick={() => setState(initialState)}>Reset filters</button>
+              <p>Adjust your search or filters, or clear everything to return to the full collection.</p>
+              <Button onClick={clearDiscovery}><RotateCcw aria-hidden="true" /> Clear filters</Button>
             </div>
           ) : (
-            <div className={styles.rows}>{visible.map((product) => <CatalogShelfRow key={product.slug} product={product} />)}</div>
+            <>
+              <div className={styles.resultsSummary}>Showing {rendered.length} of {visible.length}</div>
+              <div className={state.view === "grid" ? styles.productGrid : styles.productList}>
+                {rendered.map((product) => <CatalogProductItem key={product.slug} product={product} view={state.view} format={state.format} />)}
+              </div>
+              {rendered.length < visible.length && (
+                <div className={styles.loadMore}>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    aria-label="Load more Catalog Products"
+                    onClick={() => patch({ visibleCount: state.visibleCount + CATALOG_PAGE_SIZE }, false)}
+                  >
+                    Load more <span aria-hidden="true">({visible.length - rendered.length} remaining)</span>
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
     </section>
+  );
+}
+
+function FilterBadge({ label, remove }: { label: string; remove: () => void }) {
+  return (
+    <Button type="button" variant="secondary" size="sm" className={styles.activeFilterBadge} aria-label={`Remove ${label} filter`} onClick={remove}>
+      <span>{label}</span>
+      <X aria-hidden="true" />
+    </Button>
   );
 }

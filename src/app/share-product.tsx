@@ -1,32 +1,39 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Copy, Share2 } from "lucide-react";
+import { useRef, useState, useSyncExternalStore } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import styles from "./product-detail.module.css";
 
 export function ShareProduct({ canonical, title }: { canonical: string; title: string }) {
-  const [message, setMessage] = useState("");
+  const canShare = useSyncExternalStore(
+    () => () => {},
+    () => typeof navigator.share === "function",
+    () => false,
+  );
   const [showFallback, setShowFallback] = useState(false);
   const fallback = useRef<HTMLInputElement>(null);
 
   async function share() {
-    setMessage("");
-    setShowFallback(false);
-
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title, url: canonical });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+    try {
+      await navigator.share({ title, url: canonical });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        toast.error("Sharing is unavailable. Try copying the link instead.");
       }
     }
+  }
 
+  async function copy() {
+    setShowFallback(false);
     try {
       await navigator.clipboard.writeText(canonical);
-      setMessage("Canonical product link copied.");
+      toast.success("Product link copied");
     } catch {
       setShowFallback(true);
-      setMessage("Clipboard access failed. Copy the canonical link manually below.");
+      toast.error("Clipboard access failed. Copy the link manually.");
       requestAnimationFrame(() => {
         fallback.current?.focus();
         fallback.current?.select();
@@ -36,20 +43,14 @@ export function ShareProduct({ canonical, title }: { canonical: string; title: s
 
   return (
     <div className={styles.share}>
-      <button type="button" onClick={share}>
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <circle cx="18" cy="5" r="2.5" />
-          <circle cx="6" cy="12" r="2.5" />
-          <circle cx="18" cy="19" r="2.5" />
-          <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" />
-        </svg>
-        Share Catalog Product
-      </button>
-      <p className={styles.shareStatus} role="status" aria-live="polite" aria-atomic="true">{message}</p>
+      <div className={styles.shareActions}>
+        {canShare && <Button type="button" onClick={share}><Share2 aria-hidden="true" /> Share</Button>}
+        <Button type="button" variant="outline" onClick={copy}><Copy aria-hidden="true" /> Copy link</Button>
+      </div>
       {showFallback && (
         <label className={styles.shareFallback}>
-          <span>Copy the canonical link manually:</span>
-          <input ref={fallback} aria-label="Canonical product link" readOnly value={canonical} onFocus={(event) => event.currentTarget.select()} />
+          <span>Copy the canonical link manually</span>
+          <Input ref={fallback} aria-label="Canonical product link" readOnly value={canonical} onFocus={(event) => event.currentTarget.select()} />
         </label>
       )}
     </div>

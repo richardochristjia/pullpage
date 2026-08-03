@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
-import { applyCatalogView, UNKNOWN_RARITY_FILTER, type CatalogViewState } from "@/catalog/interactions";
+import {
+  applyCatalogView,
+  catalogStateFromSearchParams,
+  catalogStateToSearchParams,
+  UNKNOWN_RARITY_FILTER,
+  type CatalogViewState,
+} from "@/catalog/interactions";
 
 const product = (overrides: Partial<PublicCatalogProduct>): PublicCatalogProduct => ({
   slug: "catalog-product-00000000",
@@ -18,7 +24,7 @@ const product = (overrides: Partial<PublicCatalogProduct>): PublicCatalogProduct
 const initialState: CatalogViewState = {
   query: "",
   rarities: [],
-  formats: [],
+  format: "any",
   minimumPrice: null,
   maximumPrice: null,
   sort: "card-asc",
@@ -36,7 +42,7 @@ describe("Catalog interactions", () => {
     expect(applyCatalogView(products, { ...initialState, query: "no name" })).toEqual([]);
   });
 
-  test("combines OR selections within groups and AND across groups with selected-format inclusive prices", () => {
+  test("filters by one explicit Supported Binder Format and uses the displayed Starting Price", () => {
     const products = [
       product({
         slug: "both-ar",
@@ -57,11 +63,19 @@ describe("Catalog interactions", () => {
       ...initialState,
       query: "pika",
       rarities: ["AR", UNKNOWN_RARITY_FILTER],
-      formats: ["Toploader"],
+      format: "toploader",
       minimumPrice: 150_000,
       maximumPrice: 150_000,
     });
     expect(matches.map(({ slug }) => slug)).toEqual(["both-ar"]);
+
+    const bothFormats = applyCatalogView(products, {
+      ...initialState,
+      format: "both",
+      minimumPrice: 90_000,
+      maximumPrice: 90_000,
+    });
+    expect(bothFormats.map(({ slug }) => slug)).toEqual(["both-ar"]);
 
     const anyFormat = applyCatalogView(products, {
       ...initialState,
@@ -72,6 +86,36 @@ describe("Catalog interactions", () => {
     expect(anyFormat.map(({ slug }) => slug)).toEqual(["unknown"]);
   });
 
+  test("round-trips the shareable Catalog view while rejecting unsupported URL values", () => {
+    const state = catalogStateFromSearchParams(new URLSearchParams(
+      "q=pika+chu&rarity=AR&rarity=__unknown_rarity__&format=toploader&min=70000&max=90000&sort=price-desc&view=list&show=48",
+    ));
+
+    expect(state).toEqual({
+      query: "pika chu",
+      rarities: ["AR", UNKNOWN_RARITY_FILTER],
+      format: "toploader",
+      minimumPrice: 70_000,
+      maximumPrice: 90_000,
+      sort: "price-desc",
+      view: "list",
+      visibleCount: 48,
+    });
+    expect(catalogStateToSearchParams(state).toString()).toBe(
+      "q=pika+chu&rarity=AR&rarity=__unknown_rarity__&format=toploader&min=70000&max=90000&sort=price-desc&view=list&show=48",
+    );
+    expect(catalogStateFromSearchParams(new URLSearchParams(
+      "format=unsupported&min=-1&max=nope&sort=random&view=tiles&show=7",
+    ))).toMatchObject({
+      format: "any",
+      minimumPrice: null,
+      maximumPrice: null,
+      sort: "card-asc",
+      view: "grid",
+      visibleCount: 24,
+    });
+  });
+
   test("sorts Card Name, eligible price, and configured Rarity with missing values last and stable ties", () => {
     const products = [
       product({ slug: "unknown", cardName: null }),
@@ -79,12 +123,12 @@ describe("Catalog interactions", () => {
       product({ slug: "eevee-a", cardName: "Eevee", collectorNumber: "002", designName: "Alpha", rarity: "AR", raritySortPosition: 5, formatOptions: [{ format: "Binder Sleeve", price: 90_000 }] }),
       product({ slug: "bulba", cardName: "Bulbasaur", rarity: "AR", raritySortPosition: 5, formatOptions: [{ format: "Toploader", price: 90_000 }] }),
     ];
-    const slugs = (sort: CatalogViewState["sort"], formats: CatalogViewState["formats"] = []) =>
-      applyCatalogView(products, { ...initialState, sort, formats }).map(({ slug }) => slug);
+    const slugs = (sort: CatalogViewState["sort"], format: CatalogViewState["format"] = "any") =>
+      applyCatalogView(products, { ...initialState, sort, format }).map(({ slug }) => slug);
 
     expect(slugs("card-asc")).toEqual(["bulba", "eevee-a", "eevee-z", "unknown"]);
     expect(slugs("card-desc")).toEqual(["eevee-a", "eevee-z", "bulba", "unknown"]);
-    expect(slugs("price-asc", ["Binder Sleeve"])).toEqual(["eevee-a", "unknown", "eevee-z"]);
+    expect(slugs("price-asc", "binder-sleeve")).toEqual(["eevee-a", "unknown", "eevee-z"]);
     expect(slugs("price-desc")).toEqual(["eevee-z", "unknown", "bulba", "eevee-a"]);
     expect(slugs("rarity-asc")).toEqual(["bulba", "eevee-a", "eevee-z", "unknown"]);
     expect(slugs("rarity-desc")).toEqual(["eevee-z", "bulba", "eevee-a", "unknown"]);

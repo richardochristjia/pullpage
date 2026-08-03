@@ -45,8 +45,7 @@ export function ProductPreview({ url, alt, sizes }: ProductPreviewProps) {
         src={url}
         unoptimized
         alt={alt}
-        width={600}
-        height={840}
+        fill
         sizes={sizes}
         loading="lazy"
         onLoad={() => {

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getCatalogProduct } from "@/catalog/catalog";
-import { ProductDetail } from "@/app/product-detail";
+import { ProductDetail, productHeading } from "@/app/product-detail";
 import { ProductModal } from "@/app/modal";
 import { generateCatalogProductMetadata } from "@/catalog/product-metadata";
 import { ProductNotFound } from "@/app/product-not-found";
@@ -14,7 +14,7 @@ async function ModalContent({ params }: ProductPageProps) {
   const product = await getCatalogProduct(slug);
   const headingId = "modal-product-heading";
   return (
-    <ProductModal headingId={headingId} slug={slug}>
+    <ProductModal slug={slug} title={product ? productHeading(product) : "Catalog Product not found"}>
       {product
         ? <ProductDetail product={product} headingId={headingId} modal />
         : <ProductNotFound headingId={headingId} modal />}

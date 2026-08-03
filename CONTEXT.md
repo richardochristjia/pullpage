@@ -32,6 +32,10 @@ _Avoid_: Standard Binder, fgToploader, toploader flag
 A supported binder format together with that format’s price. Every Catalog Product has at least one Format Option; Binder Sleeve and Toploader prices may differ, and all prices are denominated in Indonesian rupiah (IDR).
 _Avoid_: Toploader flag, single product price
 
+**Starting Price**:
+The lowest price among the Format Options relevant to the customer’s selected Supported Binder Format; when no single format is selected, it is the lowest price for the Catalog Product.
+_Avoid_: Base price, single product price
+
 **Design Name**:
 An optional customer-visible name distinguishing an extended-art design. When multiple Catalog Products target the same card, each has a distinct Design Name.
 _Avoid_: Variant, binder format

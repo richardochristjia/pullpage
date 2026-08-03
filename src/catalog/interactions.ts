@@ -1,6 +1,9 @@
-import type { CatalogFormatOption, PublicCatalogProduct } from "./catalog";
+import type { PublicCatalogProduct } from "./catalog";
 
 export const UNKNOWN_RARITY_FILTER = "__unknown_rarity__";
+export const CATALOG_PAGE_SIZE = 24;
+
+export type CatalogFormatFilter = "any" | "binder-sleeve" | "toploader" | "both";
 
 export type CatalogSort =
   | "card-asc"
@@ -13,11 +16,68 @@ export type CatalogSort =
 export type CatalogViewState = {
   query: string;
   rarities: string[];
-  formats: CatalogFormatOption["format"][];
+  format: CatalogFormatFilter;
   minimumPrice: number | null;
   maximumPrice: number | null;
   sort: CatalogSort;
 };
+
+export type CatalogUrlState = CatalogViewState & {
+  view: "grid" | "list";
+  visibleCount: number;
+};
+
+export const INITIAL_CATALOG_STATE: CatalogUrlState = {
+  query: "",
+  rarities: [],
+  format: "any",
+  minimumPrice: null,
+  maximumPrice: null,
+  sort: "card-asc",
+  view: "grid",
+  visibleCount: CATALOG_PAGE_SIZE,
+};
+
+const FORMATS: CatalogFormatFilter[] = ["any", "binder-sleeve", "toploader", "both"];
+const SORTS: CatalogSort[] = ["card-asc", "card-desc", "price-asc", "price-desc", "rarity-asc", "rarity-desc"];
+
+function positiveNumber(value: string | null) {
+  if (value === null || value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function catalogStateFromSearchParams(searchParams: URLSearchParams): CatalogUrlState {
+  const format = searchParams.get("format");
+  const sort = searchParams.get("sort");
+  const visibleCount = positiveNumber(searchParams.get("show"));
+
+  return {
+    query: searchParams.get("q") ?? INITIAL_CATALOG_STATE.query,
+    rarities: [...new Set(searchParams.getAll("rarity").filter(Boolean))],
+    format: FORMATS.includes(format as CatalogFormatFilter) ? format as CatalogFormatFilter : INITIAL_CATALOG_STATE.format,
+    minimumPrice: positiveNumber(searchParams.get("min")),
+    maximumPrice: positiveNumber(searchParams.get("max")),
+    sort: SORTS.includes(sort as CatalogSort) ? sort as CatalogSort : INITIAL_CATALOG_STATE.sort,
+    view: searchParams.get("view") === "list" ? "list" : INITIAL_CATALOG_STATE.view,
+    visibleCount: visibleCount !== null && visibleCount >= CATALOG_PAGE_SIZE
+      ? Math.floor(visibleCount / CATALOG_PAGE_SIZE) * CATALOG_PAGE_SIZE
+      : CATALOG_PAGE_SIZE,
+  };
+}
+
+export function catalogStateToSearchParams(state: CatalogUrlState) {
+  const params = new URLSearchParams();
+  if (state.query) params.set("q", state.query);
+  state.rarities.forEach((rarity) => params.append("rarity", rarity));
+  if (state.format !== INITIAL_CATALOG_STATE.format) params.set("format", state.format);
+  if (state.minimumPrice !== null) params.set("min", String(state.minimumPrice));
+  if (state.maximumPrice !== null) params.set("max", String(state.maximumPrice));
+  if (state.sort !== INITIAL_CATALOG_STATE.sort) params.set("sort", state.sort);
+  if (state.view !== INITIAL_CATALOG_STATE.view) params.set("view", state.view);
+  if (state.visibleCount > CATALOG_PAGE_SIZE) params.set("show", String(state.visibleCount));
+  return params;
+}
 
 function searchText(value: string) {
   return value
@@ -25,6 +85,27 @@ function searchText(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("en")
     .replace(/[\s/-]+/g, "");
+}
+
+function matchesFormatFilter(product: PublicCatalogProduct, format: CatalogFormatFilter) {
+  if (format === "any") return true;
+  if (format === "both") return product.formatOptions.length === 2;
+  const expected = format === "binder-sleeve" ? "Binder Sleeve" : "Toploader";
+  return product.formatOptions.some((option) => option.format === expected);
+}
+
+function relevantFormatOptions(product: PublicCatalogProduct, format: CatalogFormatFilter) {
+  if (format === "binder-sleeve") {
+    return product.formatOptions.filter((option) => option.format === "Binder Sleeve");
+  }
+  if (format === "toploader") {
+    return product.formatOptions.filter((option) => option.format === "Toploader");
+  }
+  return product.formatOptions;
+}
+
+export function catalogStartingPrice(product: PublicCatalogProduct, format: CatalogFormatFilter) {
+  return Math.min(...relevantFormatOptions(product, format).map(({ price }) => price));
 }
 
 export function applyCatalogView(
@@ -40,16 +121,11 @@ export function applyCatalogView(
     const matchesRarity = state.rarities.length === 0 || state.rarities.some((rarity) =>
       rarity === UNKNOWN_RARITY_FILTER ? product.rarity === null : product.rarity === rarity,
     );
-    const matchesFormat = state.formats.length === 0 || product.formatOptions.some(({ format }) =>
-      state.formats.includes(format),
-    );
-    const eligiblePrices = product.formatOptions
-      .filter(({ format }) => state.formats.length === 0 || state.formats.includes(format))
-      .map(({ price }) => price);
-    const matchesPrice = eligiblePrices.some((price) =>
-      (state.minimumPrice === null || price >= state.minimumPrice) &&
-      (state.maximumPrice === null || price <= state.maximumPrice),
-    );
+    const matchesFormat = matchesFormatFilter(product, state.format);
+    const startingPrice = matchesFormat ? catalogStartingPrice(product, state.format) : Number.POSITIVE_INFINITY;
+    const matchesPrice =
+      (state.minimumPrice === null || startingPrice >= state.minimumPrice) &&
+      (state.maximumPrice === null || startingPrice <= state.maximumPrice);
 
     return matchesSearch && matchesRarity && matchesFormat && matchesPrice;
   });
@@ -67,11 +143,7 @@ export function applyCatalogView(
     text(left.collectorNumber, right.collectorNumber) ||
     text(left.designName, right.designName) ||
     slug(left, right);
-  const eligiblePrice = (product: PublicCatalogProduct) => Math.min(
-    ...product.formatOptions
-      .filter(({ format }) => state.formats.length === 0 || state.formats.includes(format))
-      .map(({ price }) => price),
-  );
+  const eligiblePrice = (product: PublicCatalogProduct) => catalogStartingPrice(product, state.format);
 
   return filtered.sort((left, right) => {
     switch (state.sort) {
