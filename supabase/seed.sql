@@ -1,3 +1,2 @@
--- Synthetic fixtures are intentionally not embedded in Supabase migration/reset automation.
--- Run the environment-guarded `npm run db:seed:local` or `npm run db:seed:preview` command.
--- Production has no seed path.
+-- Synthetic Catalog fixtures are applied by `npm run db:reset` or `npm run db:seed:local`.
+-- The seeder accepts only a disposable loopback PostgreSQL URL and has no hosted target.

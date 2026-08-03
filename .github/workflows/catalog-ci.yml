@@ -14,7 +14,6 @@ jobs:
     timeout-minutes: 30
     env:
       LOCAL_MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-      SUPABASE_ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,9 +24,7 @@ jobs:
       - run: npx supabase start
       - run: npm run db:reset
       - name: Provision isolated local runtime identity
-        run: |
-          printf 'SUPABASE_ADMIN_DATABASE_URL=%s\n' "$SUPABASE_ADMIN_DATABASE_URL" > .env.local
-          npm run db:provision-runtime
+        run: npm run db:provision-runtime
       - run: npm run catalog:verify-tooling
       - run: npm run typecheck
       - run: npm run lint
@@ -48,8 +45,6 @@ jobs:
     timeout-minutes: 20
     env:
       LOCAL_MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-      CATALOG_SEED_ENVIRONMENT: local
-      CATALOG_ALLOW_SYNTHETIC_SEED: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

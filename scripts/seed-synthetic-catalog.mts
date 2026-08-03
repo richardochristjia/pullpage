@@ -1,18 +1,14 @@
 import dotenv from "dotenv";
-import { readFileSync } from "node:fs";
 import pg from "pg";
 import { buildSyntheticCatalogFixtures } from "../src/catalog/synthetic-fixtures.ts";
-import { assertSyntheticSeedTarget, type CatalogEnvironmentInventory } from "../src/catalog/environment-policy.ts";
 
-dotenv.config({ path: ".env.promotion.local", quiet: true });
 dotenv.config({ path: ".env.local", quiet: true });
-const environment = process.env.CATALOG_SEED_ENVIRONMENT;
-if (environment !== "local" && environment !== "preview" && environment !== "production") throw new Error("CATALOG_SEED_ENVIRONMENT must identify local, preview, or production");
-if (process.env.CATALOG_ALLOW_SYNTHETIC_SEED !== "true") throw new Error("CATALOG_ALLOW_SYNTHETIC_SEED=true is required");
-const databaseUrl = environment === "preview" ? process.env.PREVIEW_MIGRATION_DATABASE_URL : process.env.LOCAL_MIGRATION_DATABASE_URL;
-if (!databaseUrl) throw new Error(`The ${environment} synthetic seed database URL is required`);
-const inventory = JSON.parse(readFileSync("config/catalog-environments.json", "utf8")) as CatalogEnvironmentInventory;
-assertSyntheticSeedTarget({ environment, databaseUrl, inventory });
+const databaseUrl = process.env.LOCAL_MIGRATION_DATABASE_URL;
+if (!databaseUrl) throw new Error("LOCAL_MIGRATION_DATABASE_URL is required for synthetic fixtures");
+const seedUrl = new URL(databaseUrl);
+if (seedUrl.protocol !== "postgresql:" || !new Set(["127.0.0.1", "localhost", "[::1]", "::1"]).has(seedUrl.hostname)) {
+  throw new Error("Synthetic fixtures require a disposable loopback PostgreSQL database");
+}
 
 const fixtures = buildSyntheticCatalogFixtures();
 const legacyPreviewConfiguration = {
@@ -149,7 +145,7 @@ try {
   `, [fixtures.products.map((product) => product.id)]);
   if (result.rowCount !== fixtures.products.length || result.rows.some((row) => !row.slug)) throw new Error("Synthetic Catalog did not produce every generated slug");
   await client.query("commit");
-  console.log(JSON.stringify({ environment, productCount: result.rowCount, generatedSlugsVerified: true }));
+  console.log(JSON.stringify({ environment: "local", productCount: result.rowCount, generatedSlugsVerified: true }));
 } catch (error) {
   await client.query("rollback");
   throw error;

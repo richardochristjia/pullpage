@@ -5,12 +5,12 @@ import styles from "./product-detail.module.css";
 
 export function ShareProduct({ canonical, title }: { canonical: string; title: string }) {
   const [message, setMessage] = useState("");
-  const [showRecovery, setShowRecovery] = useState(false);
-  const recovery = useRef<HTMLInputElement>(null);
+  const [showFallback, setShowFallback] = useState(false);
+  const fallback = useRef<HTMLInputElement>(null);
 
   async function share() {
     setMessage("");
-    setShowRecovery(false);
+    setShowFallback(false);
 
     if (typeof navigator.share === "function") {
       try {
@@ -25,11 +25,11 @@ export function ShareProduct({ canonical, title }: { canonical: string; title: s
       await navigator.clipboard.writeText(canonical);
       setMessage("Canonical product link copied.");
     } catch {
-      setShowRecovery(true);
+      setShowFallback(true);
       setMessage("Clipboard access failed. Copy the canonical link manually below.");
       requestAnimationFrame(() => {
-        recovery.current?.focus();
-        recovery.current?.select();
+        fallback.current?.focus();
+        fallback.current?.select();
       });
     }
   }
@@ -46,10 +46,10 @@ export function ShareProduct({ canonical, title }: { canonical: string; title: s
         Share Catalog Product
       </button>
       <p className={styles.shareStatus} role="status" aria-live="polite" aria-atomic="true">{message}</p>
-      {showRecovery && (
-        <label className={styles.shareRecovery}>
+      {showFallback && (
+        <label className={styles.shareFallback}>
           <span>Copy the canonical link manually:</span>
-          <input ref={recovery} aria-label="Canonical product link" readOnly value={canonical} onFocus={(event) => event.currentTarget.select()} />
+          <input ref={fallback} aria-label="Canonical product link" readOnly value={canonical} onFocus={(event) => event.currentTarget.select()} />
         </label>
       )}
     </div>

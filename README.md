@@ -1,61 +1,56 @@
 # Pullpage Catalog
 
-A server-rendered Catalog of Pullpage extended-art products backed by hosted Supabase PostgreSQL.
+A server-rendered Catalog of Pullpage extended-art products backed by Supabase PostgreSQL. Trusted editors maintain Catalog Products directly in Supabase; the Next.js application only reads active products through Prisma.
 
-## Hosted Supabase setup
+## Runtime configuration
 
-Use a dedicated development/test Supabase project, not a database containing production customer data.
+The application needs one server-only environment variable:
 
-Requirements: Node.js and npm. Docker is not required.
+```dotenv
+CATALOG_DATABASE_URL="postgresql://catalog_runtime.<project-ref>:<password>@<session-pooler-host>:5432/postgres?sslmode=require"
+```
+
+Use the Supabase **Session pooler** connection for the dedicated `catalog_runtime` role. The role has `SELECT` only, and row-level security exposes only rows whose `is_active` value is true.
+
+Set only `CATALOG_DATABASE_URL` in the Vercel Production and Preview scopes. Never expose it through a `NEXT_PUBLIC_` variable or browser code. A production build deliberately succeeds without this variable; database access starts when a request renders a Catalog route.
+
+For local application development, save the same read-only value in the ignored `.env.local`, then run:
 
 ```sh
 npm install
-npx supabase login
-npx supabase link --project-ref <project-ref>
-npm run db:push:dry-run
-npm run db:push
-npm run prisma:generate
+npm run dev
 ```
 
-`db:push` applies pending migrations and the deterministic synthetic seed. It does not reset or delete the hosted database.
+Open <http://localhost:3000>.
 
-Copy the project's **Session pooler** connection string into `.env.local` as the admin connection, replacing the password placeholder locally:
+## Catalog editing
+
+Trusted non-developers follow [Edit the Pullpage Catalog in Supabase](docs/catalog-editor-guide.md). The guide covers creating and editing rows, Catalog Visibility, permanent deletion, Product Preview uploads, field constraints, and public verification.
+
+Public Catalog responses use ordinary framework caching. A healthy saved change becomes visible in approximately 60 seconds without a deployment. Existing public HTTPS Cloudinary images and new public Supabase Storage images are both supported.
+
+## Developer database maintenance
+
+Database-owner access is developer-only and must not be configured in Vercel or application runtime environments. Put the Supabase owner **Session pooler** URL in the ignored `.env.migration.local` file:
 
 ```dotenv
-SUPABASE_ADMIN_DATABASE_URL="postgresql://postgres.<project-ref>:<url-encoded-database-password>@<pooler-host>:5432/postgres"
+CATALOG_MIGRATION_DATABASE_URL="postgresql://postgres.<project-ref>:<password>@<session-pooler-host>:5432/postgres?sslmode=require"
 ```
 
-Provision the least-privilege runtime login:
+Apply committed immutable migrations and verify the resulting contract:
+
+```sh
+npm run db:migrate
+npm run db:verify-catalog
+```
+
+To install or rotate the dedicated read-only login, run:
 
 ```sh
 npm run db:provision-runtime
 ```
 
-This generates and installs a random password for `catalog_runtime`, then writes `CATALOG_DATABASE_URL` and `TEST_CATALOG_DATABASE_URL` to the ignored `.env.local`. It also creates `CATALOG_REVALIDATE_SECRET` when absent. It never prints either secret. Run it again to rotate the runtime credential.
-
-Start the application with `npm run dev` and open <http://localhost:3000>.
-
-The runtime identity can select only from `catalog_public.active_catalog_products` and `catalog_public.catalog_rarities`; it cannot read or write Catalog Product, Product Preview rights, or environment configuration tables in `catalog_private`.
-
-The complete public projection uses one shared remote current `catalog` generation with 30-second stale/revalidation and 60-second idle-expiry values. Metadata and the runtime sitemap consume that same generation. A separately retained whole-generation safety copy prevents a failed refresh from becoming empty, partial, mixed, or mass not-found output. Configure the fixed-scope Supabase Database Webhooks described in [the Catalog Editor guide](docs/catalog-editor-guide.md) to expire the current generation immediately after accepted product, rights, or preview-configuration changes.
-
-Canonical and shared links always use `https://pullpage.vercel.app`, including Preview deployments. Vercel Production (`VERCEL_ENV=production`) permits indexing; Preview, development, and other environments emit `noindex, nofollow` and disallow crawling. Search-engine recrawl and third-party social-card cache timing are external and have no 60-second guarantee.
-
-## Catalog editing
-
-Follow [Catalog Editor: Edit → Save → Verify](docs/catalog-editor-guide.md). The guide covers fields, actionable database errors, generated slugs, reversible archive/restore, public verification, ambiguous saves, and the required non-developer rehearsals. Routine Catalog Editors never hard-delete Catalog Products.
-
-## Environment promotion
-
-Follow the [Catalog environment promotion and release runbook](docs/catalog-promotion-runbook.md). It defines isolated local/Preview/Production identities, immutable migrations, deterministic synthetic fixtures, credential-free pull-request CI, protected Preview promotion, Production release gates, and rollback/repair procedures.
-
-## Recovery operations
-
-Every successful Catalog Product mutation has a transactionally consistent private before/after journal entry. Follow the [Catalog audit and recovery runbook](docs/catalog-recovery-runbook.md) for targeted correction, exceptional controlled deletion, encrypted independent exports, isolated restore verification, approvals, and evidence. Paid Supabase PITR and Platform Audit Logs remain deferred on the free plan.
-
-## Resilience operations
-
-Follow the [Catalog resilience runbook](docs/catalog-resilience-runbook.md) for bounded connection settings, structured telemetry, alert rules, database/cache incidents, manual recovery, and retained fault/load/freshness qualification.
+This reads `CATALOG_MIGRATION_DATABASE_URL` from `.env.migration.local`, changes only the `catalog_runtime` password, and writes read-only `CATALOG_DATABASE_URL` and `TEST_CATALOG_DATABASE_URL` values to `.env.local`. It does not print credentials.
 
 ## Validation
 
@@ -63,14 +58,19 @@ Follow the [Catalog resilience runbook](docs/catalog-resilience-runbook.md) for 
 npm run typecheck
 npm run lint
 npm test
-npm run test:integration
-npm run test:production
+npm run build
 ```
 
-Install Playwright's Chromium once with `npx playwright install chromium` before running browser tests.
+Install Playwright Chromium once with `npx playwright install chromium`. Browser and PostgreSQL integration suites additionally require disposable local Supabase:
 
-`npm run build` deliberately needs no database credential. Database access begins only when a request dynamically renders the Catalog route.
+```sh
+npm run db:start
+LOCAL_MIGRATION_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run db:reset
+LOCAL_MIGRATION_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run db:provision-runtime
+npm run build
+LOCAL_MIGRATION_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run test:integration
+LOCAL_MIGRATION_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" npm run test:e2e
+npm run db:stop
+```
 
-## Optional local Supabase
-
-The `db:start`, `db:reset`, `db:lint`, and `db:stop` scripts use the local Supabase stack and therefore require Docker. They are not needed for the hosted workflow above.
+The local Supabase commands require Docker. They never target the hosted Catalog. Pull-request CI uses only this disposable local stack and requires no hosted Supabase credential.

@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
 import pg from "pg";
 
+dotenv.config({ path: ".env.migration.local", quiet: true });
 dotenv.config({ path: ".env.local", quiet: true });
-const databaseUrl = process.env.CATALOG_VERIFY_DATABASE_URL;
-if (!databaseUrl) throw new Error("CATALOG_VERIFY_DATABASE_URL is required.");
+const databaseUrl = process.env.CATALOG_VERIFY_DATABASE_URL ?? process.env.CATALOG_MIGRATION_DATABASE_URL;
+if (!databaseUrl) throw new Error("CATALOG_MIGRATION_DATABASE_URL is required in .env.migration.local (or set CATALOG_VERIFY_DATABASE_URL explicitly).");
 
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10_000 });
 try {
