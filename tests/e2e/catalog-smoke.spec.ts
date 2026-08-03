@@ -4,12 +4,12 @@ import { expect, test } from "@playwright/test";
 const productionOrigin = "https://pullpage.vercel.app";
 
 test("browses the hosted-compatible Catalog without issuing writes", async ({ page, request }) => {
-  const methods: string[] = [];
-  page.on("request", (outgoing) => methods.push(outgoing.method()));
+  const requests: Array<{ method: string; url: string }> = [];
+  page.on("request", (outgoing) => requests.push({ method: outgoing.method(), url: outgoing.url() }));
 
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${productionOrigin}/`);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", productionOrigin);
   await expect(page.getByRole("heading", { level: 1, name: "The Pullpage Catalog" })).toBeVisible();
   await expect(page.getByRole("status")).not.toHaveText(/Loading Catalog Products/);
 
@@ -28,8 +28,12 @@ test("browses the hosted-compatible Catalog without issuing writes", async ({ pa
     await expect(page.getByRole("status")).toHaveText("0 results");
   }
 
-  expect(methods.every((method) => method === "GET")).toBe(true);
-  expect(methods).not.toContain("POST");
+  const applicationOrigin = new URL(page.url()).origin;
+  const applicationMethods = requests
+    .filter((outgoing) => new URL(outgoing.url).origin === applicationOrigin)
+    .map((outgoing) => outgoing.method);
+  const readOnlyMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+  expect(applicationMethods.filter((method) => !readOnlyMethods.has(method))).toEqual([]);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 

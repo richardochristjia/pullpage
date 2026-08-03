@@ -18,6 +18,7 @@
     "20260728030000_expose_only_controlled_recovery_operations.sql": "2e56db9831d3d6e80f02239522e357fa6f62e3fa6a2ff0efee0663e91b9f0159",
     "20260729000000_create_catalog_invalidation_webhook.sql": "e8cf9a8e0a6b5497ee8cc92c37443c8e2009081effc5d8b226bc7f9932c64a76",
     "20260729010000_invalidate_catalog_preview_changes.sql": "19432b8594d2949c297132c32e4180f8402088baebcdb37a93f12e6a62cabfab",
-    "20260730000000_simplify_catalog_source.sql": "f4fc275650656e04e2c3a87314ce9579fca5a2ee8af4d9397a3d1bbf41d1bf4d"
+    "20260730000000_simplify_catalog_source.sql": "f4fc275650656e04e2c3a87314ce9579fca5a2ee8af4d9397a3d1bbf41d1bf4d",
+    "20260803000000_canonicalize_product_preview_bucket_name.sql": "20a2d7542867743f4d194fd66c57481e064a6c556e6e165a11a623ae9f820ee6"
   }
 }

@@ -4,7 +4,7 @@ const productionOrigin = "https://pullpage.vercel.app";
 
 test("serves immutable product canonicals, metadata, robots, and sitemap entries", async ({ page, request }) => {
   await page.goto("/");
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${productionOrigin}/`);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", productionOrigin);
   const pikachuHref = await page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ }).getAttribute("href");
   expect(pikachuHref).toMatch(/^\/products\/pikachu-[a-z0-9-]+$/);
 

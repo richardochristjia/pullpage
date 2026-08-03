@@ -38,7 +38,7 @@ try {
       ) active_policy
   `);
   const bucket = await pool.query(`
-    select public, file_size_limit, allowed_mime_types
+    select id, name, public, file_size_limit, allowed_mime_types
     from storage.buckets where id = 'product-previews'
   `);
 
@@ -50,7 +50,7 @@ try {
   if (JSON.stringify(tables.rows) !== JSON.stringify([{ table_name: "catalog_products" }]) ||
       JSON.stringify(columns.rows.map(({ column_name }) => column_name)) !== JSON.stringify(expectedColumns) ||
       runtime.rows.length !== 1 || !runtime.rows[0].can_select || runtime.rows[0].can_write || !runtime.rows[0].active_policy ||
-      bucket.rows.length !== 1 || !bucket.rows[0].public || Number(bucket.rows[0].file_size_limit) !== 5_242_880 ||
+      bucket.rows.length !== 1 || bucket.rows[0].name !== bucket.rows[0].id || !bucket.rows[0].public || Number(bucket.rows[0].file_size_limit) !== 5_242_880 ||
       JSON.stringify(bucket.rows[0].allowed_mime_types) !== JSON.stringify(["image/jpeg", "image/png", "image/webp"])) {
     throw new Error("The simplified Catalog database contract is incomplete.");
   }

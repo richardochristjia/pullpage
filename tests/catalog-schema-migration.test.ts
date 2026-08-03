@@ -3,10 +3,10 @@ import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, test } from "vitest";
 
-const migrationPath = join(
-  process.cwd(),
-  "supabase/migrations/20260730000000_simplify_catalog_source.sql",
-);
+const migrationPaths = [
+  "20260730000000_simplify_catalog_source.sql",
+  "20260803000000_canonicalize_product_preview_bucket_name.sql",
+].map((migration) => join(process.cwd(), "supabase/migrations", migration));
 
 async function currentCatalogDatabase() {
   const db = new PGlite();
@@ -191,7 +191,9 @@ afterEach(async () => {
 async function migratedCatalogDatabase() {
   const database = await currentCatalogDatabase();
   databases.push(database);
-  await database.exec(readFileSync(migrationPath, "utf8"));
+  for (const migrationPath of migrationPaths) {
+    await database.exec(readFileSync(migrationPath, "utf8"));
+  }
   return database;
 }
 
@@ -381,7 +383,7 @@ describe("simplified Catalog schema migration", () => {
     `);
     expect(bucket.rows).toEqual([{
       id: "product-previews",
-      name: "Product Previews",
+      name: "product-previews",
       public: true,
       file_size_limit: 5242880,
       allowed_mime_types: ["image/jpeg", "image/png", "image/webp"],
