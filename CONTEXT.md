@@ -41,7 +41,7 @@ An optional customer-visible name distinguishing an extended-art design. When mu
 _Avoid_: Variant, binder format
 
 **Product Preview**:
-An optional thumbnail showing the finished presentation of the Pokémon card together with its extended-art surround. A missing or unavailable external image URL is replaced by a branded Pullpage placeholder.
+An optional thumbnail showing the finished presentation of the Pokémon card together with its extended-art surround. A missing or invalid external image URL, or one that fails its initial browser load, is replaced by a branded Pullpage placeholder; elapsed loading time alone does not make a Product Preview unavailable.
 _Avoid_: Raw artwork, card image
 
 **Catalog Visibility**:

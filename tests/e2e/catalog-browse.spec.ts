@@ -106,6 +106,45 @@ test("delivers an HTTPS Product Preview directly and falls back after failed del
   expect(failedAttempts).toBe(1);
 });
 
+test("keeps a Product Preview that loaded before hydration", async ({ page }) => {
+  await page.clock.install();
+  await page.route("**/_next/static/**/*.js", async (route) => {
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    await route.fulfill({ response });
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const preview = page.locator('img[src^="https://"]:not([src*="/_next/image"])').first();
+  await preview.waitFor({ state: "attached" });
+  await expect.poll(() => preview.evaluate((image) => {
+    const previewImage = image as HTMLImageElement;
+    return previewImage.complete && previewImage.naturalWidth > 0;
+  })).toBe(true);
+  const source = await preview.getAttribute("src");
+
+  await page.waitForLoadState("networkidle");
+  await page.clock.fastForward(11_000);
+
+  await expect(page.locator(`img[src=${JSON.stringify(source)}]`)).toBeVisible();
+});
+
+test("keeps a successfully loaded Product Preview after a late error", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const preview = page.locator('img[src^="https://"]:not([src*="/_next/image"])').first();
+  await preview.waitFor({ state: "visible" });
+  await expect.poll(() => preview.evaluate((image) => {
+    const previewImage = image as HTMLImageElement;
+    return previewImage.complete && previewImage.naturalWidth > 0;
+  })).toBe(true);
+  const source = await preview.getAttribute("src");
+
+  await preview.dispatchEvent("error");
+
+  await expect(page.locator(`img[src=${JSON.stringify(source)}]`)).toBeVisible();
+});
+
 test("defaults to dark and persists the visitor's light theme", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass(/dark/);
