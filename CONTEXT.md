@@ -39,3 +39,7 @@ _Avoid_: Variant, binder format
 **Product Preview**:
 An optional thumbnail showing the finished presentation of the Pokémon card together with its extended-art surround. A missing or unavailable external image URL is replaced by a branded Pullpage placeholder.
 _Avoid_: Raw artwork, card image
+
+**Catalog Visibility**:
+A Catalog Product’s explicit inclusion state: active products are public, while inactive products remain recorded but are absent from every public Catalog surface. It is not stock, sales availability, approval, or archival state.
+_Avoid_: Publication workflow, inventory status, archive status

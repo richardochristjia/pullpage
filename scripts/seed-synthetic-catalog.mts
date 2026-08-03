@@ -20,7 +20,56 @@ const client = await pool.connect();
 try {
   await client.query("begin");
   await client.query("set local lock_timeout = '5s'; set local statement_timeout = '60s'");
-  await client.query(`
+  const schema = await client.query<{ simplified: boolean }>(`
+    select exists (
+      select 1 from information_schema.columns
+      where table_schema = 'catalog_private'
+        and table_name = 'catalog_products'
+        and column_name = 'is_active'
+    ) simplified
+  `);
+
+  if (schema.rows[0].simplified) {
+    const columnsPerProduct = 11;
+    const values: unknown[] = [];
+    const tuples = fixtures.products.map((product, productIndex) => {
+      const base = productIndex * columnsPerProduct;
+      values.push(
+        product.id,
+        "",
+        product.cardName,
+        product.collectorNumber,
+        product.setName,
+        product.rarityCode,
+        product.designName,
+        product.formatCode === "TL" ? null : product.binderSleevePrice,
+        product.formatCode === "BS" ? null : product.toploaderPrice,
+        product.productPreviewUrl,
+        product.archivedAt === null,
+      );
+      return `(${Array.from({ length: columnsPerProduct }, (_, column) => `$${base + column + 1}`).join(",")})`;
+    });
+    await client.query(`
+      insert into catalog_private.catalog_products (
+        id, slug, card_name, collector_number, set_name, rarity, design_name,
+        binder_sleeve_price, toploader_price, product_preview_url, is_active
+      ) values ${tuples.join(",")}
+      on conflict (id) do update set
+        card_name=excluded.card_name, collector_number=excluded.collector_number,
+        set_name=excluded.set_name, rarity=excluded.rarity, design_name=excluded.design_name,
+        binder_sleeve_price=excluded.binder_sleeve_price,
+        toploader_price=excluded.toploader_price,
+        product_preview_url=excluded.product_preview_url, is_active=excluded.is_active
+      where (catalog_products.card_name, catalog_products.collector_number,
+        catalog_products.set_name, catalog_products.rarity, catalog_products.design_name,
+        catalog_products.binder_sleeve_price, catalog_products.toploader_price,
+        catalog_products.product_preview_url, catalog_products.is_active)
+      is distinct from (excluded.card_name, excluded.collector_number, excluded.set_name,
+        excluded.rarity, excluded.design_name, excluded.binder_sleeve_price,
+        excluded.toploader_price, excluded.product_preview_url, excluded.is_active)
+    `, values);
+  } else {
+    await client.query(`
     insert into catalog_private.product_preview_configuration (singleton, environment_name, cloud_name, asset_folder)
     values (true, $1, $2, $3)
     on conflict (singleton) do update set environment_name=excluded.environment_name, cloud_name=excluded.cloud_name, asset_folder=excluded.asset_folder, updated_at=statement_timestamp()
@@ -80,7 +129,8 @@ try {
     is distinct from (excluded.card_name, excluded.collector_number, excluded.set_name, excluded.rarity_code,
       excluded.design_name, excluded.format_code, excluded.binder_sleeve_price, excluded.toploader_price,
       excluded.product_preview_url, excluded.product_preview_rights_id, excluded.archived_at)
-  `, values);
+    `, values);
+  }
   const result = await client.query<{ id: string; slug: string }>(`
     select id, slug from catalog_private.catalog_products
     where id = any($1::uuid[]) order by id

@@ -7,18 +7,18 @@ try {
   const counts = await pool.query<{
     products: number;
     active_products: number;
-    archived_products: number;
-    journal_entries: number;
+    inactive_products: number;
   }>(`
     select
-      (select count(*)::int from catalog_private.catalog_products) products,
-      (select count(*)::int from catalog_public.active_catalog_products) active_products,
-      (select count(*)::int from catalog_private.catalog_products where archived_at is not null) archived_products,
-      (select count(*)::int from catalog_private.catalog_product_journal) journal_entries
+      count(*)::int products,
+      count(*) filter (where is_active)::int active_products,
+      count(*) filter (where not is_active)::int inactive_products
+    from catalog_private.catalog_products
   `);
   const facts = await pool.query(`
-    select card_name, collector_number, set_name, rarity_code, format_code
-    from catalog_public.active_catalog_products order by slug limit 5
+    select card_name, collector_number, set_name, rarity,
+      binder_sleeve_price, toploader_price, is_active
+    from catalog_private.catalog_products order by slug limit 5
   `);
   const client = await pool.connect();
   let rollbackVerified = false;
@@ -36,10 +36,10 @@ try {
     recordedAt: new Date().toISOString(),
     upgradeDurationMs: Number(process.env.UPGRADE_DURATION_MS),
     ...counts.rows[0],
-    representativePublicFacts: facts.rows,
-    priorApplicationCompatibility: counts.rows[0].active_products === 480,
+    representativeCatalogFacts: facts.rows,
+    expectedVisibilityMapping: counts.rows[0].active_products === 480 && counts.rows[0].inactive_products === 21,
     transactionalRollbackVerified: rollbackVerified,
-    forwardRepairProcedure: "docs/catalog-promotion-runbook.md#failure-and-repair",
+    decision: "docs/adr/0001-use-a-directly-edited-read-only-supabase-catalog.md",
   }, null, 2));
 } finally {
   await pool.end();

@@ -94,14 +94,23 @@ async function loadCatalogGeneration(databaseUrl: string): Promise<CatalogGenera
         card_name,
         collector_number,
         set_name,
-        rarity_code,
-        rarity_sort_position,
+        rarity as rarity_code,
+        case rarity
+          when 'C' then 1 when 'U' then 2 when 'R' then 3 when 'RR' then 4
+          when 'AR' then 5 when 'SR' then 6 when 'SAR' then 7 when 'UR' then 8
+          else null
+        end as rarity_sort_position,
         design_name,
-        format_code,
+        case
+          when binder_sleeve_price is not null and toploader_price is not null then 'ALL'
+          when binder_sleeve_price is not null then 'BS'
+          else 'TL'
+        end as format_code,
         binder_sleeve_price,
         toploader_price,
         product_preview_url
-      from catalog_public.active_catalog_products
+      from catalog_private.catalog_products
+      where is_active
       order by slug
     `;
     if (rows.length === 0) {

@@ -5,4 +5,24 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["catalog_private"]
+}
+
+model CatalogProduct {
+  id                  String   @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  slug                String   @unique @db.VarChar(96)
+  cardName            String?  @map("card_name") @db.Text
+  collectorNumber     String?  @map("collector_number") @db.Text
+  setName             String?  @map("set_name") @db.Text
+  rarity              String?  @db.VarChar(32)
+  designName          String?  @map("design_name") @db.Text
+  binderSleevePrice   Int?     @map("binder_sleeve_price")
+  toploaderPrice      Int?     @map("toploader_price")
+  productPreviewUrl   String?  @map("product_preview_url") @db.Text
+  createdAt           DateTime @default(dbgenerated("statement_timestamp()")) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(dbgenerated("statement_timestamp()")) @map("updated_at") @db.Timestamptz(6)
+  isActive            Boolean  @default(true) @map("is_active")
+
+  @@map("catalog_products")
+  @@schema("catalog_private")
 }

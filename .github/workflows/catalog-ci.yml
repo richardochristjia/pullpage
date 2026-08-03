@@ -59,7 +59,7 @@ jobs:
       - name: Build prior schema with the 500-product fixture
         run: |
           mkdir -p /tmp/later-migrations
-          mv supabase/migrations/20260728*.sql supabase/migrations/20260729*.sql /tmp/later-migrations/
+          mv supabase/migrations/20260728*.sql supabase/migrations/20260729*.sql supabase/migrations/20260730*.sql /tmp/later-migrations/
           npx supabase db reset
           node scripts/seed-synthetic-catalog.mts
           mv /tmp/later-migrations/*.sql supabase/migrations/
