@@ -15,6 +15,17 @@ const inventory = JSON.parse(readFileSync("config/catalog-environments.json", "u
 assertSyntheticSeedTarget({ environment, databaseUrl, inventory });
 
 const fixtures = buildSyntheticCatalogFixtures();
+const legacyPreviewConfiguration = {
+  environmentName: "synthetic",
+  cloudName: "pullpage-synthetic",
+  assetFolder: "catalog-products/",
+};
+const legacyPreviewRights = {
+  id: "20000000-0000-4000-8000-000000000001",
+  exactVersionedUrl: "https://res.cloudinary.com/pullpage-synthetic/image/upload/v1/catalog-products/synthetic-preview.webp",
+};
+const legacyFormat = (product: (typeof fixtures.products)[number]) =>
+  product.binderSleevePrice && product.toploaderPrice ? "ALL" : product.binderSleevePrice ? "BS" : "TL";
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 10_000 });
 const client = await pool.connect();
 try {
@@ -40,12 +51,12 @@ try {
         product.cardName,
         product.collectorNumber,
         product.setName,
-        product.rarityCode,
+        product.rarity,
         product.designName,
-        product.formatCode === "TL" ? null : product.binderSleevePrice,
-        product.formatCode === "BS" ? null : product.toploaderPrice,
+        product.binderSleevePrice,
+        product.toploaderPrice,
         product.productPreviewUrl,
-        product.archivedAt === null,
+        product.isActive,
       );
       return `(${Array.from({ length: columnsPerProduct }, (_, column) => `$${base + column + 1}`).join(",")})`;
     });
@@ -75,8 +86,8 @@ try {
     on conflict (singleton) do update set environment_name=excluded.environment_name, cloud_name=excluded.cloud_name, asset_folder=excluded.asset_folder, updated_at=statement_timestamp()
     where (product_preview_configuration.environment_name, product_preview_configuration.cloud_name, product_preview_configuration.asset_folder)
       is distinct from (excluded.environment_name, excluded.cloud_name, excluded.asset_folder)
-  `, [fixtures.configuration.environmentName, fixtures.configuration.cloudName, fixtures.configuration.assetFolder]);
-  const rights = fixtures.approvedRights;
+  `, [legacyPreviewConfiguration.environmentName, legacyPreviewConfiguration.cloudName, legacyPreviewConfiguration.assetFolder]);
+  const rights = legacyPreviewRights;
   await client.query(`
     insert into catalog_private.product_preview_rights (
       id, exact_versioned_url, asset_identifier, source, creator_photographer, owner_licensor,
@@ -106,9 +117,10 @@ try {
   const values: unknown[] = [];
   const tuples = fixtures.products.map((product, productIndex) => {
     const base = productIndex * columnsPerProduct;
-    values.push(product.id, "", product.cardName, product.collectorNumber, product.setName, product.rarityCode,
-      product.designName, product.formatCode, product.binderSleevePrice, product.toploaderPrice,
-      product.productPreviewUrl, product.productPreviewRightsId, product.archivedAt);
+    values.push(product.id, "", product.cardName, product.collectorNumber, product.setName, product.rarity,
+      product.designName, legacyFormat(product), product.binderSleevePrice, product.toploaderPrice,
+      product.productPreviewUrl, product.productPreviewUrl ? legacyPreviewRights.id : null,
+      product.isActive ? null : "2026-01-01T00:00:00.000Z");
     return `(${Array.from({ length: columnsPerProduct }, (_, column) => `$${base + column + 1}`).join(",")})`;
   });
   await client.query(`

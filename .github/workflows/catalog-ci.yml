@@ -15,7 +15,6 @@ jobs:
     env:
       LOCAL_MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
       SUPABASE_ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-      CATALOG_REVALIDATE_SECRET: local-ci-invalidation-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,15 +26,18 @@ jobs:
       - run: npm run db:reset
       - name: Provision isolated local runtime identity
         run: |
-          printf 'SUPABASE_ADMIN_DATABASE_URL=%s\nCATALOG_REVALIDATE_SECRET=%s\n' "$SUPABASE_ADMIN_DATABASE_URL" "$CATALOG_REVALIDATE_SECRET" > .env.local
+          printf 'SUPABASE_ADMIN_DATABASE_URL=%s\n' "$SUPABASE_ADMIN_DATABASE_URL" > .env.local
           npm run db:provision-runtime
       - run: npm run catalog:verify-tooling
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm test
-      - run: npm run build
+      - name: Unit and disposable local integration tests
+        run: npm test
+      - name: Production build without a database credential
+        run: CATALOG_DATABASE_URL= TEST_CATALOG_DATABASE_URL= npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - name: Disposable local browser and cache tests
+        run: npm run test:e2e
       - name: Verify migration/schema drift
         run: |
           npm run db:lint

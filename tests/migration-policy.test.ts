@@ -10,7 +10,7 @@ describe("Catalog migration policy", () => {
 
   test("requires expand/backfill/contract evidence for new destructive SQL", () => {
     expect(() => validateMigrationSafety("drop table catalog_private.catalog_products;", "20260730000000_bad.sql")).toThrow(/expand\/backfill\/contract/i);
-    const reviewed = readFileSync(join(process.cwd(), "supabase/migrations/20260729000000_create_catalog_invalidation_webhook.sql"), "utf8");
-    expect(validateMigrationSafety(reviewed, "20260729000000_create_catalog_invalidation_webhook.sql")).toEqual({ safe: true });
+    const reviewed = readFileSync(join(process.cwd(), "supabase/migrations/20260730000000_simplify_catalog_source.sql"), "utf8");
+    expect(validateMigrationSafety(reviewed, "20260730000000_simplify_catalog_source.sql")).toEqual({ safe: true });
   });
 });

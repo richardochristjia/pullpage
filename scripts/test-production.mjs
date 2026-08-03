@@ -7,7 +7,7 @@ if (!npmCli) throw new Error("npm_execpath is required to run production validat
 const environment = { ...process.env, VERCEL_ENV: "production" };
 const commands = [
   [npmCli, "run", "build"],
-  [fileURLToPath(import.meta.resolve("@playwright/test/cli")), "test"],
+  [fileURLToPath(import.meta.resolve("@playwright/test/cli")), "test", "tests/e2e/catalog-smoke.spec.ts"],
 ];
 
 for (const arguments_ of commands) {

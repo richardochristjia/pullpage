@@ -5,12 +5,12 @@ const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead =>
   slug: "pikachu-001-001-electric-frame-0123abcd",
   cardName: "Pikachu",
   collectorNumber: "001/001",
-  setName: "Generation Test",
+  setName: "Mapping Test",
   rarity: "AR",
   designName: "Electric Frame",
   binderSleevePrice: 90_000,
   toploaderPrice: 120_000,
-  productPreviewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/generation/pikachu.png",
+  productPreviewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/mapping/pikachu.png",
   ...overrides,
 });
 
@@ -20,11 +20,11 @@ describe("public Catalog Product seam", () => {
       slug: "pikachu-001-001-electric-frame-0123abcd",
       cardName: "Pikachu",
       collectorNumber: "001/001",
-      setName: "Generation Test",
+      setName: "Mapping Test",
       rarity: "AR",
       raritySortPosition: 5,
       designName: "Electric Frame",
-      previewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/generation/pikachu.png",
+      previewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/mapping/pikachu.png",
       formatOptions: [
         { format: "Binder Sleeve", price: 90_000 },
         { format: "Toploader", price: 120_000 },
