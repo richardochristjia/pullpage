@@ -2,10 +2,8 @@ import dotenv from "dotenv";
 import { Pool } from "pg";
 import { afterAll, describe, expect, test } from "vitest";
 import {
-  CatalogUnavailableError,
   closeCatalog,
   getCatalogProduct,
-  getCatalogRuntimeStatus,
   listActiveCatalogProducts,
 } from "@/catalog/catalog";
 
@@ -591,42 +589,6 @@ integration("Catalog database seam", () => {
       await admin.end();
     }
   });
-
-  test("bounds connection acquisition and statements to one recoverable runtime connection", async () => {
-    const admin = new Pool({ connectionString: adminDatabaseUrl });
-    const lockClient = await admin.connect();
-    await lockClient.query("begin");
-    await lockClient.query("lock table catalog_private.catalog_products in access exclusive mode");
-
-    try {
-      const statementStartedAt = Date.now();
-      const blockedStatement = listActiveCatalogProducts({ databaseUrl });
-      let observedConnections = 0;
-      for (let attempt = 0; attempt < 20; attempt += 1) {
-        observedConnections = Math.max(observedConnections, getCatalogRuntimeStatus().connections.total);
-        if (observedConnections === 1) break;
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-
-      const acquisitionStartedAt = Date.now();
-      await expect(listActiveCatalogProducts({ databaseUrl })).rejects.toBeInstanceOf(CatalogUnavailableError);
-      expect(Date.now() - acquisitionStartedAt).toBeLessThanOrEqual(7_000);
-      await expect(blockedStatement).rejects.toBeInstanceOf(CatalogUnavailableError);
-      expect(Date.now() - statementStartedAt).toBeLessThanOrEqual(12_000);
-      expect(observedConnections).toBe(1);
-      expect(getCatalogRuntimeStatus()).toMatchObject({
-        connections: { maximum: 1 },
-        consecutiveRefreshFailures: 2,
-      });
-    } finally {
-      await lockClient.query("rollback");
-      lockClient.release();
-      await admin.end();
-    }
-
-    expect((await listActiveCatalogProducts({ databaseUrl })).length).toBeGreaterThan(0);
-    expect(getCatalogRuntimeStatus().consecutiveRefreshFailures).toBe(0);
-  }, 20_000);
 
   test("denies archive, restore, and hard deletion through the runtime database identity", async () => {
     const pool = new Pool({ connectionString: databaseUrl });

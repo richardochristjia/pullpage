@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { productSocialMetadataImage } from "@/catalog/product-metadata";
 import {
   PRODUCTION_ORIGIN,
   catalogCanonical,
@@ -71,11 +72,30 @@ describe("discoverability policy seam", () => {
     expect(bounded.description.endsWith(".")).toBe(true);
   });
 
-  test("uses only a versioned rights-current Product Preview for social imagery", () => {
+  test("uses Cloudinary and Supabase Storage Product Previews for social imagery", () => {
     expect(productSocialImage(product.previewUrl)).toContain("f_jpg,q_auto,c_pad,w_1200,h_630,b_rgb:08111f");
-    expect(productSocialImage("https://example.com/image.png")).toBe(
+    const supabase = "https://vozvldzmzfdohusojrfq.supabase.co/storage/v1/object/public/product-previews/pikachu.webp";
+    expect(productSocialImage(supabase)).toBe(supabase);
+    expect(productSocialImage("http://example.com/image.png")).toBe(
       "https://pullpage.vercel.app/pullpage-social.png",
     );
+  });
+
+  test("describes known-size social images without inventing dimensions for Storage previews", () => {
+    const cloudinarySocial = productSocialImage(product.previewUrl);
+    expect(productSocialMetadataImage(product.previewUrl, cloudinarySocial, "Pikachu")).toEqual({
+      url: cloudinarySocial,
+      width: 1200,
+      height: 630,
+      type: "image/jpeg",
+      alt: "Pullpage Product Preview for Pikachu",
+    });
+
+    const supabase = "https://vozvldzmzfdohusojrfq.supabase.co/storage/v1/object/public/product-previews/pikachu.webp";
+    expect(productSocialMetadataImage(supabase, supabase, "Pikachu")).toEqual({
+      url: supabase,
+      alt: "Pullpage Product Preview for Pikachu",
+    });
   });
 
   test("indexes production and blocks every other environment", () => {

@@ -4,6 +4,25 @@ import { indexingPolicy, productCanonical, productDiscoverability, SOCIAL_FALLBA
 
 export type ProductMetadataProps = { params: Promise<{ slug: string }> };
 
+export function productSocialMetadataImage(
+  previewUrl: string | null,
+  socialImage: string,
+  title: string,
+) {
+  const alt = socialImage === SOCIAL_FALLBACK_URL
+    ? "Pullpage — Pull The Art. Own The Page."
+    : `Pullpage Product Preview for ${title}`;
+  const image = { url: socialImage, alt };
+
+  if (socialImage === SOCIAL_FALLBACK_URL) {
+    return { ...image, width: 1200, height: 630, type: "image/png" as const };
+  }
+  if (previewUrl && socialImage !== previewUrl) {
+    return { ...image, width: 1200, height: 630, type: "image/jpeg" as const };
+  }
+  return image;
+}
+
 export async function generateCatalogProductMetadata({ params }: ProductMetadataProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getCatalogProduct(slug);
@@ -20,15 +39,7 @@ export async function generateCatalogProductMetadata({ params }: ProductMetadata
   }
 
   const content = productDiscoverability(product);
-  const image = {
-    url: content.socialImage,
-    width: 1200,
-    height: 630,
-    type: content.socialImage === SOCIAL_FALLBACK_URL ? "image/png" : "image/jpeg",
-    alt: content.socialImage === SOCIAL_FALLBACK_URL
-      ? "Pullpage — Pull The Art. Own The Page."
-      : `Pullpage Product Preview for ${content.title}`,
-  };
+  const image = productSocialMetadataImage(product.previewUrl, content.socialImage, content.title);
   return {
     title: content.title,
     description: content.description,

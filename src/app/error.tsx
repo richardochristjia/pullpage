@@ -23,7 +23,7 @@ export default function CatalogError({ unstable_retry }: {
         <section className={styles.intro}>
           <p className={styles.eyebrow}>Pull the art. Own the page.</p>
           <h1>The Catalog is temporarily unavailable</h1>
-          <p className={styles.errorDescription}>Pullpage could not load a safe Catalog generation. Please try again shortly.</p>
+          <p className={styles.errorDescription}>Pullpage could not load the Catalog Products. Please try again shortly.</p>
           <button className={styles.errorAction} type="button" onClick={() => unstable_retry()}>Retry loading the Catalog</button>
         </section>
       </main>

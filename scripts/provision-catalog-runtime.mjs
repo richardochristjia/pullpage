@@ -35,8 +35,5 @@ function setEnv(name, value) {
 }
 setEnv("CATALOG_DATABASE_URL", runtimeUrl.toString());
 setEnv("TEST_CATALOG_DATABASE_URL", runtimeUrl.toString());
-if (!process.env.CATALOG_REVALIDATE_SECRET) {
-  setEnv("CATALOG_REVALIDATE_SECRET", randomBytes(32).toString("hex"));
-}
 await writeFile(".env.local", env);
-console.log("Catalog runtime and invalidation credentials were saved to .env.local.");
+console.log("The Catalog runtime credential was saved to .env.local.");

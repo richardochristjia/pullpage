@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { productPreviewLoader } from "@/catalog/product-preview-loader";
+import { isHttpsProductPreview } from "@/catalog/product-preview";
 import styles from "./catalog.module.css";
 import { ProductPlaceholder } from "./product-placeholder";
 
@@ -36,14 +36,14 @@ export function ProductPreview({ url, alt, sizes }: ProductPreviewProps) {
     };
   }, [url]);
 
-  if (!url || failedUrl === url) return <ProductPlaceholder />;
+  if (!url || !isHttpsProductPreview(url) || failedUrl === url) return <ProductPlaceholder />;
 
   return (
     <div ref={frame} className={`${styles.preview} ${styles.previewAvailable}`} aria-busy={loadedUrl !== url}>
       <Image
         className={styles.previewImage}
-        loader={productPreviewLoader}
         src={url}
+        unoptimized
         alt={alt}
         width={600}
         height={840}

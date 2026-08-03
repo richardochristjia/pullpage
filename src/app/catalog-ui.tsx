@@ -91,6 +91,25 @@ export function CatalogBrowser({ products }: { products: PublicCatalogProduct[] 
   ].filter((rarity, index, values) => values.indexOf(rarity) === index), [products]);
   const resultLabel = `${visible.length} ${visible.length === 1 ? "result" : "results"}`;
 
+  if (products.length === 0) {
+    return (
+      <section className={styles.shelf} aria-labelledby="catalog-heading">
+        <div className={styles.shelfHeading}>
+          <div>
+            <p className={styles.eyebrow}>Current collection</p>
+            <h2 id="catalog-heading">Catalog Products</h2>
+          </div>
+          <p role="status" aria-live="polite" aria-atomic="true">0 results</p>
+        </div>
+        <div className={styles.emptyState}>
+          <p className={styles.eyebrow}>A fresh page is coming</p>
+          <h2>No Catalog Products are active yet</h2>
+          <p>Please check back soon for new extended-art designs.</p>
+        </div>
+      </section>
+    );
+  }
+
   const toggleRarity = (rarity: string) => setState((current) => ({
     ...current,
     rarities: current.rarities.includes(rarity)

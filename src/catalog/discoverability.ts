@@ -1,3 +1,5 @@
+import { isHttpsProductPreview } from "./product-preview";
+
 export const PRODUCTION_ORIGIN = "https://pullpage.vercel.app";
 export const SOCIAL_FALLBACK_URL = `${PRODUCTION_ORIGIN}/pullpage-social.png`;
 
@@ -48,8 +50,8 @@ export function indexingPolicy(environment = process.env.VERCEL_ENV) {
 export function productSocialImage(previewUrl: string | null) {
   if (!previewUrl) return SOCIAL_FALLBACK_URL;
   const match = VERSIONED_PRODUCT_PREVIEW.exec(previewUrl);
-  if (!match) return SOCIAL_FALLBACK_URL;
-  return `${match[1]}f_jpg,q_auto,c_pad,w_1200,h_630,b_rgb:08111f/${match[2]}`;
+  if (match) return `${match[1]}f_jpg,q_auto,c_pad,w_1200,h_630,b_rgb:08111f/${match[2]}`;
+  return isHttpsProductPreview(previewUrl) ? previewUrl : SOCIAL_FALLBACK_URL;
 }
 
 export function productDiscoverability(product: DiscoverableCatalogProduct) {
