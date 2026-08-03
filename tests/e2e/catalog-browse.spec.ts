@@ -154,6 +154,97 @@ test("defaults to dark and persists the visitor's light theme", async ({ page })
   await expect(page.locator("html")).toHaveClass(/light/);
 });
 
+test("keeps Product Details inside a portrait mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/?view=list", { waitUntil: "networkidle" });
+  const product = page.locator("[data-product-slug]").filter({ has: page.locator("img") }).first();
+  const productSlug = await product.getAttribute("data-product-slug");
+  await product.focus();
+  await product.click();
+
+  const dialog = page.getByRole("dialog").first();
+  await expect(dialog).toBeVisible();
+  await dialog.evaluate((element) => Promise.all(
+    element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+  ));
+  const bounds = await dialog.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(-1);
+  expect(bounds!.y).toBeGreaterThanOrEqual(-1);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(391);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(845);
+
+  const previewBounds = await dialog.locator("img").first().boundingBox();
+  expect(previewBounds).not.toBeNull();
+  expect(previewBounds!.height).toBeLessThanOrEqual(844 * 0.55);
+  const headingBounds = await dialog.getByRole("heading", { level: 2 }).first().boundingBox();
+  expect(headingBounds).not.toBeNull();
+  expect(headingBounds!.y).toBeLessThan(844);
+
+  const scrollMetrics = await dialog.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+
+  const fullImage = dialog.getByRole("button", { name: "View full image" });
+  await dialog.hover();
+  await page.mouse.wheel(0, 150);
+  await expect.poll(() => dialog.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  const detailScrollTop = await dialog.evaluate((element) => element.scrollTop);
+  await fullImage.click();
+  await expect(page.getByRole("dialog", { name: "Full Product Preview" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  await expect(fullImage).toBeFocused();
+  expect(await dialog.evaluate((element) => element.scrollTop)).toBe(detailScrollTop);
+
+  await dialog.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  const closeBounds = await dialog.getByRole("button", { name: "Close product details" }).boundingBox();
+  expect(closeBounds).not.toBeNull();
+  expect(closeBounds!.width).toBeGreaterThanOrEqual(44);
+  expect(closeBounds!.height).toBeGreaterThanOrEqual(44);
+  expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(391);
+  expect(closeBounds!.y).toBeGreaterThanOrEqual(0);
+
+  await dialog.getByText("Back to the Catalog").click();
+  await expect(dialog).toBeHidden();
+  expect(new URL(page.url()).searchParams.get("view")).toBe("list");
+  await expect(page.locator(`[data-product-slug=${JSON.stringify(productSlug)}]`)).toBeFocused();
+});
+
+test("keeps Product Details usable on small portrait and landscape viewports", async ({ page }) => {
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/", { waitUntil: "networkidle" });
+    await page.locator("[data-product-slug]").first().click();
+
+    const dialog = page.getByRole("dialog").first();
+    await expect(dialog).toBeVisible();
+    await dialog.evaluate((element) => Promise.all(
+      element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+    ));
+    const bounds = await dialog.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(-1);
+    expect(bounds!.y).toBeGreaterThanOrEqual(-1);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+
+    await dialog.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    expect(await dialog.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    await expect(dialog.getByText("Back to the Catalog")).toBeInViewport();
+    const close = dialog.getByRole("button", { name: "Close product details" });
+    await expect(close).toBeInViewport();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+  }
+});
+
 test("keeps the responsive Catalog within narrow viewports", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");

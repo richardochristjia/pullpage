@@ -18,7 +18,7 @@ export function ProductPreviewLightbox({ url, alt }: { url: string | null; alt: 
               <Maximize2 aria-hidden="true" /> View full image
             </Button>
           </DialogTrigger>
-          <DialogContent className={styles.lightboxContent}>
+          <DialogContent className={styles.lightboxContent} onEscapeKeyDown={(event) => event.stopPropagation()}>
             <DialogHeader className="sr-only">
               <DialogTitle>Full Product Preview</DialogTitle>
               <DialogDescription>Complete uncropped Product Preview. Use native browser zoom gestures to inspect it.</DialogDescription>

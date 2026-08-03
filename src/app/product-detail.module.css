@@ -97,6 +97,7 @@
 }
 .shelfLink:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
 .shelfLink svg { width: 17px; }
+.modalShelfButton { border: 0; padding-inline: 0; cursor: pointer; background: transparent; }
 .lightboxContent {
   width: min(920px, calc(100vw - 24px));
   max-width: none;
@@ -119,6 +120,9 @@
   .detail { grid-template-columns: 1fr; }
   .previewBlock { min-height: auto; padding: 18px; }
   .previewBlock > :first-child { width: min(100%, 520px); }
+  .modalDetail .previewBlock { height: 55dvh; max-height: 55dvh; }
+  .modalDetail .previewBlock > :first-child { width: auto; height: 100%; max-width: 100%; max-height: 100%; }
+  .modalDetail .content { padding-bottom: calc(clamp(30px, 5vw, 62px) + env(safe-area-inset-bottom)); }
   .fullImageButton { right: 28px; bottom: 28px; }
 }
 
@@ -126,6 +130,7 @@
   .pageMain { width: 100%; padding: 0; }
   .detail { border-inline: 0; border-radius: 0; }
   .content { padding: 28px 20px 42px; }
+  .modalDetail .content { padding-bottom: calc(42px + env(safe-area-inset-bottom)); }
   .facts { grid-template-columns: 1fr; gap: 15px; }
   .previewBlock { padding: 12px; }
   .fullImageButton { right: 20px; bottom: 20px; }

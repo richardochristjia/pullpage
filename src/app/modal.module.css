@@ -9,26 +9,43 @@
   background: var(--card);
   box-shadow: 0 30px 100px rgb(0 0 0 / 55%);
 }
+.dialog > :last-child { grid-area: 1 / 1; align-self: start; }
 .close {
-  position: absolute;
+  position: sticky;
   z-index: 5;
   top: 14px;
-  right: 14px;
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: end;
+  margin: 14px 14px 0 0;
   border-color: var(--border);
   border-radius: 999px;
   box-shadow: 0 5px 16px rgb(0 0 0 / 20%);
 }
 
-@media (max-width: 700px) {
+@keyframes mobile-dialog-enter {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+@media (max-width: 800px) {
   .dialog {
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100dvw;
     height: 100dvh;
     max-width: none;
     max-height: none;
     overflow-y: auto;
     border-radius: 0;
+    translate: 0 0 !important;
     transform: none;
+  }
+  .dialog[data-state="open"] {
+    animation: mobile-dialog-enter 180ms ease-out;
+  }
+  .close {
+    top: max(14px, env(safe-area-inset-top));
+    margin-top: max(14px, env(safe-area-inset-top));
+    margin-right: max(14px, env(safe-area-inset-right));
   }
 }
