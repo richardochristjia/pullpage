@@ -1,7 +1,11 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getCatalog } from "@/catalog/catalog";
-import { catalogStateFromSearchParams, type CatalogUrlState } from "@/catalog/interactions";
+import { getCatalog, getCatalogRarityFilterOptions } from "@/catalog/catalog";
+import {
+  catalogStateFromSearchParams,
+  catalogStateWithAvailableRarities,
+  type CatalogUrlState,
+} from "@/catalog/interactions";
 import { SiteHeader } from "@/components/site-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,8 +25,13 @@ function toUrlSearchParams(values: Awaited<SearchParams>) {
 
 async function CatalogShelf({ searchParams }: { searchParams: SearchParams }) {
   await connection();
-  const initialState: CatalogUrlState = catalogStateFromSearchParams(toUrlSearchParams(await searchParams));
-  return <CatalogBrowser products={await getCatalog()} initialState={initialState} />;
+  const requestedState: CatalogUrlState = catalogStateFromSearchParams(toUrlSearchParams(await searchParams));
+  const [products, rarities] = await Promise.all([
+    getCatalog(),
+    getCatalogRarityFilterOptions(),
+  ]);
+  const initialState = catalogStateWithAvailableRarities(requestedState, rarities);
+  return <CatalogBrowser products={products} rarities={rarities} initialState={initialState} />;
 }
 
 function CatalogShelfLoading() {

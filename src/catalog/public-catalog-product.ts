@@ -14,6 +14,10 @@ export type PublicCatalogRarity = {
   badgeForegroundColor: string;
 };
 
+export type PublicCatalogRarityFilterOption = PublicCatalogRarity & {
+  productCount: number;
+};
+
 export type PublicCatalogProduct = {
   slug: string;
   cardName: string | null;
@@ -35,6 +39,10 @@ type CatalogRarityRead = Pick<
   | "badgeForegroundColor"
 >;
 
+export type CatalogRarityFilterRead = CatalogRarityRead & {
+  _count: { products: number };
+};
+
 export type CatalogProductRead = Pick<
   CatalogProduct,
   | "slug"
@@ -46,6 +54,13 @@ export type CatalogProductRead = Pick<
   | "toploaderPrice"
   | "productPreviewUrl"
 > & { rarityDefinition: CatalogRarityRead | null };
+
+export function toPublicCatalogRarityFilterOption(
+  rarity: CatalogRarityFilterRead,
+): PublicCatalogRarityFilterOption {
+  const { _count, ...metadata } = rarity;
+  return { ...metadata, productCount: _count.products };
+}
 
 export function toPublicCatalogProduct(product: CatalogProductRead): PublicCatalogProduct {
   const formatOptions: CatalogFormatOption[] = [];

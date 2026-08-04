@@ -3,14 +3,17 @@
 import { Grid2X2, List, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { PublicCatalogProduct, PublicCatalogRarity } from "@/catalog/catalog";
+import type {
+  PublicCatalogProduct,
+  PublicCatalogRarityFilterOption,
+} from "@/catalog/catalog";
 import {
   applyCatalogView,
   CATALOG_PAGE_SIZE,
-  catalogFilterRarities,
   catalogStartingPrice,
   catalogStateFromSearchParams,
   catalogStateToSearchParams,
+  catalogStateWithAvailableRarities,
   INITIAL_CATALOG_STATE,
   UNKNOWN_RARITY_FILTER,
   type CatalogFormatFilter,
@@ -29,7 +32,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import styles from "./catalog.module.css";
 import { ProductPreview } from "./product-preview";
-import { RarityBadge, rarityDisplayLabel } from "./rarity-badge";
+import { RarityBadge, rarityDescription, rarityDisplayLabel } from "./rarity-badge";
 
 const idr = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -114,11 +117,13 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
 function FilterFields({
   value,
   rarities,
+  unknownRarityCount,
   onChange,
   idPrefix,
 }: {
   value: FilterState;
-  rarities: PublicCatalogRarity[];
+  rarities: PublicCatalogRarityFilterOption[];
+  unknownRarityCount: number;
   onChange: (next: FilterState) => void;
   idPrefix: string;
 }) {
@@ -134,18 +139,48 @@ function FilterFields({
       <fieldset>
         <legend>Rarity</legend>
         <div className={styles.checkboxGrid}>
-          {[
-            ...rarities.map((rarity) => ({ code: rarity.code, label: rarityDisplayLabel(rarity) })),
-            { code: UNKNOWN_RARITY_FILTER, label: "Unknown rarity" },
-          ].map(({ code, label }) => {
-            const id = `${idPrefix}-rarity-${code.replaceAll("_", "-")}`;
+          {rarities.map((rarity) => {
+            const id = `${idPrefix}-rarity-${rarity.code.toLowerCase().replaceAll("_", "-")}`;
+            const disabled = rarity.productCount === 0;
             return (
-              <label key={code} htmlFor={id}>
-                <Checkbox id={id} checked={value.rarities.includes(code)} onCheckedChange={() => toggleRarity(code)} />
-                <span>{label}</span>
+              <label key={rarity.code} htmlFor={id} data-disabled={disabled}>
+                <Checkbox
+                  id={id}
+                  checked={value.rarities.includes(rarity.code)}
+                  disabled={disabled}
+                  onCheckedChange={() => toggleRarity(rarity.code)}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={styles.rarityFilterBadge}
+                      tabIndex={0}
+                      aria-label={rarityDescription(rarity)}
+                    >
+                      <RarityBadge rarity={rarity} decorative />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{rarity.displayName}</TooltipContent>
+                </Tooltip>
+                <span aria-hidden="true">({rarity.productCount})</span>
+                <span className="sr-only">{rarity.productCount} {rarity.productCount === 1 ? "product" : "products"}</span>
               </label>
             );
           })}
+          <label
+            htmlFor={`${idPrefix}-rarity-unknown`}
+            data-disabled={unknownRarityCount === 0}
+          >
+            <Checkbox
+              id={`${idPrefix}-rarity-unknown`}
+              checked={value.rarities.includes(UNKNOWN_RARITY_FILTER)}
+              disabled={unknownRarityCount === 0}
+              onCheckedChange={() => toggleRarity(UNKNOWN_RARITY_FILTER)}
+            />
+            <Badge variant="secondary">Unknown rarity</Badge>
+            <span aria-hidden="true">({unknownRarityCount})</span>
+            <span className="sr-only">{unknownRarityCount} {unknownRarityCount === 1 ? "product" : "products"}</span>
+          </label>
         </div>
       </fieldset>
 
@@ -196,11 +231,13 @@ function MobileFilters({
   products,
   state,
   rarities,
+  unknownRarityCount,
   apply,
 }: {
   products: PublicCatalogProduct[];
   state: CatalogUrlState;
-  rarities: PublicCatalogRarity[];
+  rarities: PublicCatalogRarityFilterOption[];
+  unknownRarityCount: number;
   apply: (filters: FilterState) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -225,7 +262,13 @@ function MobileFilters({
           <SheetDescription id="mobile-filter-description">Narrow the collection, then apply your choices.</SheetDescription>
         </SheetHeader>
         <div className={styles.sheetScroller}>
-          <FilterFields value={draft} rarities={rarities} onChange={setDraft} idPrefix="mobile" />
+          <FilterFields
+            value={draft}
+            rarities={rarities}
+            unknownRarityCount={unknownRarityCount}
+            onChange={setDraft}
+            idPrefix="mobile"
+          />
         </div>
         <SheetFooter className={styles.sheetFooter}>
           <Button variant="ghost" onClick={() => setDraft({
@@ -240,28 +283,36 @@ function MobileFilters({
 
 export function CatalogBrowser({
   products,
+  rarities,
   initialState = INITIAL_CATALOG_STATE,
 }: {
   products: PublicCatalogProduct[];
+  rarities: PublicCatalogRarityFilterOption[];
   initialState?: CatalogUrlState;
 }) {
-  const [state, setState] = useState<CatalogUrlState>(initialState);
+  const [state, setState] = useState<CatalogUrlState>(() =>
+    catalogStateWithAvailableRarities(initialState, rarities),
+  );
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const visible = useMemo(() => applyCatalogView(products, state), [products, state]);
   const rendered = visible.slice(0, state.visibleCount);
-  const rarities = useMemo(() => catalogFilterRarities(products), [products]);
+  const unknownRarityCount = products.filter(({ rarity }) => rarity === null).length;
   const rarityLabels = new Map(rarities.map((rarity) => [rarity.code, rarityDisplayLabel(rarity)]));
   const resultLabel = `${visible.length} ${visible.length === 1 ? "result" : "results"}`;
 
   useEffect(() => {
-    const restoreFromUrl = () => setState(catalogStateFromSearchParams(new URLSearchParams(window.location.search)));
+    const restoreFromUrl = () => setState(catalogStateWithAvailableRarities(
+      catalogStateFromSearchParams(new URLSearchParams(window.location.search)),
+      rarities,
+    ));
     window.addEventListener("popstate", restoreFromUrl);
     return () => window.removeEventListener("popstate", restoreFromUrl);
-  }, []);
+  }, [rarities]);
 
   function commit(next: CatalogUrlState) {
-    setState(next);
-    const params = catalogStateToSearchParams(next);
+    const availableState = catalogStateWithAvailableRarities(next, rarities);
+    setState(availableState);
+    const params = catalogStateToSearchParams(availableState);
     const query = params.size > 0 ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState(null, "", query);
   }
@@ -318,6 +369,7 @@ export function CatalogBrowser({
           products={products}
           state={state}
           rarities={rarities}
+          unknownRarityCount={unknownRarityCount}
           apply={(filters) => patch(filters)}
         />
         <label className={styles.sortControl}>
@@ -392,7 +444,13 @@ export function CatalogBrowser({
               </Tooltip>
             </div>
           </div>
-          {!filtersCollapsed && <FilterFields value={filterState} rarities={rarities} onChange={(filters) => patch(filters)} idPrefix="desktop" />}
+          {!filtersCollapsed && <FilterFields
+            value={filterState}
+            rarities={rarities}
+            unknownRarityCount={unknownRarityCount}
+            onChange={(filters) => patch(filters)}
+            idPrefix="desktop"
+          />}
         </aside>
 
         <div className={styles.results}>

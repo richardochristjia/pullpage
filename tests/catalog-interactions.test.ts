@@ -2,18 +2,18 @@ import { describe, expect, test } from "vitest";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import {
   applyCatalogView,
-  catalogFilterRarities,
   catalogStateFromSearchParams,
   catalogStateToSearchParams,
+  catalogStateWithAvailableRarities,
   UNKNOWN_RARITY_FILTER,
   type CatalogViewState,
 } from "@/catalog/interactions";
 
-const rarity = (code: string, displayOrder: number, isActive = true) => ({
+const rarity = (code: string, displayOrder: number) => ({
   code,
   displayName: code,
   displayOrder,
-  isActive,
+  isActive: true,
   badgeBackgroundColor: "#FFFFFF",
   badgeForegroundColor: "#000000",
 });
@@ -40,15 +40,15 @@ const initialState: CatalogViewState = {
 };
 
 describe("Catalog interactions", () => {
-  test("lists only active, used Rarities as unique filter options in configured order", () => {
-    const products = [
-      product({ slug: "active-ar", rarity: rarity("AR", 13) }),
-      product({ slug: "inactive-sr", rarity: rarity("SR", 8, false) }),
-      product({ slug: "duplicate-ar", rarity: rarity("AR", 13) }),
-      product({ slug: "unknown" }),
-    ];
+  test("ignores inactive Rarities from shared Catalog URLs", () => {
+    const state = catalogStateFromSearchParams(new URLSearchParams(
+      "rarity=AR&rarity=SR&rarity=__unknown_rarity__",
+    ));
 
-    expect(catalogFilterRarities(products).map(({ code }) => code)).toEqual(["AR"]);
+    expect(catalogStateWithAvailableRarities(state, [{ code: "AR" }]).rarities).toEqual([
+      "AR",
+      UNKNOWN_RARITY_FILTER,
+    ]);
   });
 
   test("searches supplied facts while ignoring case, accents, spaces, slashes, and hyphens", () => {

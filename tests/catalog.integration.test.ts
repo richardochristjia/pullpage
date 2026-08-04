@@ -5,6 +5,7 @@ import {
   closeCatalog,
   getCatalogProduct,
   listActiveCatalogProducts,
+  listCatalogRarityFilterOptions,
 } from "@/catalog/catalog";
 import { requireDisposableLocalDatabaseUrl } from "./support/local-database";
 
@@ -67,6 +68,35 @@ integration("disposable local Catalog database seam", () => {
       formatOptions: [{ format: "Toploader", price: 70_499 }],
     });
     expect(JSON.parse(JSON.stringify(products))).toEqual(products);
+  });
+
+  test("lists every active configured Rarity with its global active-product count", async () => {
+    const rarities = await listCatalogRarityFilterOptions({ databaseUrl });
+
+    expect(rarities).toHaveLength(21);
+    expect(rarities.find(({ code }) => code === "AR")).toMatchObject({ productCount: 56 });
+    expect(rarities.find(({ code }) => code === "RRR")).toMatchObject({ productCount: 0 });
+    expect(rarities.map(({ displayOrder }) => displayOrder)).toEqual(
+      Array.from({ length: 21 }, (_, index) => index + 1),
+    );
+  });
+
+  test("omits an inactive Rarity from filters while retaining it as a product fact", async () => {
+    const admin = new Pool({ connectionString: adminDatabaseUrl, max: 1 });
+    try {
+      await admin.query("update catalog_private.catalog_rarities set is_active = false where code = 'AR'");
+
+      const rarities = await listCatalogRarityFilterOptions({ databaseUrl });
+      expect(rarities.some(({ code }) => code === "AR")).toBe(false);
+      const products = await listActiveCatalogProducts({ databaseUrl });
+      expect(products.find(({ collectorNumber }) => collectorNumber === "173/165")?.rarity).toMatchObject({
+        code: "AR",
+        isActive: false,
+      });
+    } finally {
+      await admin.query("update catalog_private.catalog_rarities set is_active = true where code = 'AR'");
+      await admin.end();
+    }
   });
 
   test("keeps inactive Catalog Products absent from list and slug lookup", async () => {

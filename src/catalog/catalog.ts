@@ -5,13 +5,16 @@ import { cacheLife } from "next/cache";
 import { PrismaClient } from "@/generated/prisma/client";
 import {
   toPublicCatalogProduct,
+  toPublicCatalogRarityFilterOption,
   type CatalogProductRead,
+  type CatalogRarityFilterRead,
 } from "./public-catalog-product";
 
 export type {
   CatalogFormatOption,
   PublicCatalogProduct,
   PublicCatalogRarity,
+  PublicCatalogRarityFilterOption,
 } from "./public-catalog-product";
 
 export class CatalogUnavailableError extends Error {
@@ -73,6 +76,24 @@ async function queryActiveCatalogProducts(databaseUrl: string): Promise<CatalogP
   });
 }
 
+async function queryCatalogRarityFilterOptions(
+  databaseUrl: string,
+): Promise<CatalogRarityFilterRead[]> {
+  return getCatalogClient(databaseUrl).catalogRarity.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: "asc" },
+    select: {
+      code: true,
+      displayName: true,
+      displayOrder: true,
+      isActive: true,
+      badgeBackgroundColor: true,
+      badgeForegroundColor: true,
+      _count: { select: { products: { where: { isActive: true } } } },
+    },
+  });
+}
+
 export async function listActiveCatalogProducts(options?: { databaseUrl?: string }) {
   const databaseUrl = options?.databaseUrl ?? process.env.CATALOG_DATABASE_URL;
   if (!databaseUrl) throw new CatalogUnavailableError();
@@ -85,10 +106,29 @@ export async function listActiveCatalogProducts(options?: { databaseUrl?: string
   }
 }
 
+export async function listCatalogRarityFilterOptions(options?: { databaseUrl?: string }) {
+  const databaseUrl = options?.databaseUrl ?? process.env.CATALOG_DATABASE_URL;
+  if (!databaseUrl) throw new CatalogUnavailableError();
+
+  try {
+    return (await queryCatalogRarityFilterOptions(databaseUrl))
+      .map(toPublicCatalogRarityFilterOption);
+  } catch (error) {
+    if (error instanceof CatalogUnavailableError) throw error;
+    throw new CatalogUnavailableError();
+  }
+}
+
 export async function getCatalog() {
   "use cache: remote";
   cacheLife({ stale: 60, revalidate: 60 });
   return listActiveCatalogProducts();
+}
+
+export async function getCatalogRarityFilterOptions() {
+  "use cache: remote";
+  cacheLife({ stale: 60, revalidate: 60 });
+  return listCatalogRarityFilterOptions();
 }
 
 export async function getCatalogProduct(

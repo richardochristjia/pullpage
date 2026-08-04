@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { toPublicCatalogProduct, type CatalogProductRead } from "@/catalog/public-catalog-product";
+import {
+  toPublicCatalogProduct,
+  toPublicCatalogRarityFilterOption,
+  type CatalogProductRead,
+} from "@/catalog/public-catalog-product";
 
 const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead => ({
   slug: "pikachu-001-001-electric-frame-0123abcd",
@@ -22,6 +26,26 @@ const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead =>
 });
 
 describe("public Catalog Product seam", () => {
+  test("maps configured Rarity metadata with its global active-product count", () => {
+    expect(toPublicCatalogRarityFilterOption({
+      code: "AR",
+      displayName: "Art Rare",
+      displayOrder: 13,
+      isActive: true,
+      badgeBackgroundColor: "#CCFBF1",
+      badgeForegroundColor: "#134E4A",
+      _count: { products: 12 },
+    })).toEqual({
+      code: "AR",
+      displayName: "Art Rare",
+      displayOrder: 13,
+      isActive: true,
+      badgeBackgroundColor: "#CCFBF1",
+      badgeForegroundColor: "#134E4A",
+      productCount: 12,
+    });
+  });
+
   test("maps configured Rarity metadata and derives public Format Options", () => {
     expect(toPublicCatalogProduct(row())).toEqual({
       slug: "pikachu-001-001-electric-frame-0123abcd",

@@ -4,4 +4,4 @@ Rarity is configured reference data rather than a hard-coded Catalog Product str
 
 ## Consequences
 
-The configured display order is for consistent presentation and sorting, not a universal low-to-high ranking across Pokémon eras. The application reads Rarity metadata through the same read-only runtime identity, while Catalog editors choose only configured codes on Catalog Products; inactive Rarities remain valid product facts but are omitted from the filter list.
+The configured display order is for consistent presentation and sorting, not a universal low-to-high ranking across Pokémon eras. The application reads Rarity metadata through the same read-only runtime identity, while Catalog editors choose only configured codes on Catalog Products; the filter lists every active Rarity with a global active-product count, disables zero-product choices, and omits inactive Rarities without erasing them from existing product facts.

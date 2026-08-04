@@ -33,7 +33,7 @@ At least one price is required. A positive Binder Sleeve price creates the Binde
 
 Blank optional text is stored as missing. Duplicate card facts are allowed. The database creates the ID and permanent slug and maintains both timestamps. Use `NO_MARK` when the card is known to have no rarity symbol; this is different from leaving Rarity unknown.
 
-Rarity names, display order, badge colors, and filter visibility are maintained in `catalog_private.catalog_rarities`. Its `is_active` field controls whether that Rarity appears in the Catalog filter list; making a Rarity inactive does not remove its badge or facts from products that already use it. Do not change this reference data during an ordinary Catalog Product edit.
+Rarity names, display order, badge colors, and filter visibility are maintained in `catalog_private.catalog_rarities`. Its `is_active` field controls whether that Rarity appears in the Catalog filter list; every active Rarity is listed in `display_order` with its active-product count, and an active Rarity with no products remains visible but disabled. Making a Rarity inactive does not remove its badge or facts from products that already use it. Do not change this reference data during an ordinary Catalog Product edit.
 
 ## Create a Catalog Product
 

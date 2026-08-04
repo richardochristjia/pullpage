@@ -50,7 +50,15 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByRole("status")).toHaveText("480 results");
 
-  await page.getByRole("checkbox", { name: "AR", exact: true }).check();
+  const artRare = page.getByRole("checkbox", { name: /AR.*Art Rare.*56 products/ });
+  const tripleRare = page.getByRole("checkbox", { name: /RRR.*Triple Rare.*0 products/ });
+  await expect(artRare).toBeEnabled();
+  await expect(tripleRare).toBeDisabled();
+  const tripleRareBadge = page.locator('[data-slot="tooltip-trigger"][aria-label="RRR — Triple Rare"]');
+  await expect(tripleRareBadge.locator("[data-slot=badge]")).toHaveCSS("background-color", "rgb(237, 233, 254)");
+  await tripleRareBadge.hover();
+  await expect(page.getByRole("tooltip")).toHaveText("Triple Rare");
+  await artRare.check();
   await page.getByRole("radio", { name: "Toploader" }).click();
   await page.getByRole("spinbutton", { name: "Minimum" }).fill("70000");
   await page.getByRole("spinbutton", { name: "Maximum" }).fill("70500");

@@ -10,13 +10,21 @@ export function rarityDescription(rarity: PublicCatalogRarity) {
   return label === rarity.displayName ? label : `${label} — ${rarity.displayName}`;
 }
 
-export function RarityBadge({ rarity }: { rarity: PublicCatalogRarity | null }) {
+export function RarityBadge({
+  rarity,
+  decorative = false,
+}: {
+  rarity: PublicCatalogRarity | null;
+  decorative?: boolean;
+}) {
   if (rarity === null) return <Badge variant="secondary">Unknown rarity</Badge>;
 
+  const description = rarityDescription(rarity);
   return (
     <Badge
-      aria-label={rarityDescription(rarity)}
-      title={rarityDescription(rarity)}
+      aria-hidden={decorative || undefined}
+      aria-label={decorative ? undefined : description}
+      title={decorative ? undefined : description}
       style={{
         backgroundColor: rarity.badgeBackgroundColor,
         color: rarity.badgeForegroundColor,

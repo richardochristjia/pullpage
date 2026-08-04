@@ -66,6 +66,19 @@ export function catalogStateFromSearchParams(searchParams: URLSearchParams): Cat
   };
 }
 
+export function catalogStateWithAvailableRarities<T extends CatalogViewState>(
+  state: T,
+  availableRarities: readonly { code: string }[],
+): T {
+  const availableCodes = new Set(availableRarities.map(({ code }) => code));
+  return {
+    ...state,
+    rarities: state.rarities.filter((rarity) =>
+      rarity === UNKNOWN_RARITY_FILTER || availableCodes.has(rarity),
+    ),
+  };
+}
+
 export function catalogStateToSearchParams(state: CatalogUrlState) {
   const params = new URLSearchParams();
   if (state.query) params.set("q", state.query);
@@ -106,15 +119,6 @@ function relevantFormatOptions(product: PublicCatalogProduct, format: CatalogFor
 
 export function catalogStartingPrice(product: PublicCatalogProduct, format: CatalogFormatFilter) {
   return Math.min(...relevantFormatOptions(product, format).map(({ price }) => price));
-}
-
-export function catalogFilterRarities(products: readonly PublicCatalogProduct[]) {
-  return products
-    .flatMap((product) => product.rarity?.isActive ? [product.rarity] : [])
-    .sort((left, right) => left.displayOrder - right.displayOrder)
-    .filter((rarity, index, values) =>
-      values.findIndex(({ code }) => code === rarity.code) === index,
-    );
 }
 
 export function applyCatalogView(
