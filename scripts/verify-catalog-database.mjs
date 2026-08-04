@@ -20,6 +20,11 @@ try {
     where table_schema = 'catalog_private' and table_name = 'catalog_products'
     order by ordinal_position
   `);
+  const rarities = await pool.query(`
+    select code, display_name, display_order, is_active,
+      badge_background_color, badge_foreground_color
+    from catalog_private.catalog_rarities order by display_order
+  `);
   const counts = await pool.query(`
     select count(*)::integer products,
       count(*) filter (where is_active)::integer active_products,
@@ -30,6 +35,8 @@ try {
     select
       has_table_privilege('catalog_runtime', 'catalog_private.catalog_products', 'SELECT') can_select,
       has_table_privilege('catalog_runtime', 'catalog_private.catalog_products', 'INSERT,UPDATE,DELETE') can_write,
+      has_table_privilege('catalog_runtime', 'catalog_private.catalog_rarities', 'SELECT') can_select_rarities,
+      has_table_privilege('catalog_runtime', 'catalog_private.catalog_rarities', 'INSERT,UPDATE,DELETE') can_write_rarities,
       exists (
         select 1 from pg_policies
         where schemaname = 'catalog_private'
@@ -47,18 +54,22 @@ try {
     "design_name", "binder_sleeve_price", "toploader_price", "product_preview_url",
     "created_at", "updated_at", "is_active",
   ];
-  if (JSON.stringify(tables.rows) !== JSON.stringify([{ table_name: "catalog_products" }]) ||
+  const expectedTables = [{ table_name: "catalog_products" }, { table_name: "catalog_rarities" }];
+  if (JSON.stringify(tables.rows) !== JSON.stringify(expectedTables) ||
       JSON.stringify(columns.rows.map(({ column_name }) => column_name)) !== JSON.stringify(expectedColumns) ||
-      runtime.rows.length !== 1 || !runtime.rows[0].can_select || runtime.rows[0].can_write || !runtime.rows[0].active_policy ||
+      rarities.rows.length !== 21 || rarities.rows.at(-1)?.code !== "NO_MARK" ||
+      runtime.rows.length !== 1 || !runtime.rows[0].can_select || runtime.rows[0].can_write ||
+      !runtime.rows[0].can_select_rarities || runtime.rows[0].can_write_rarities || !runtime.rows[0].active_policy ||
       bucket.rows.length !== 1 || bucket.rows[0].name !== bucket.rows[0].id || !bucket.rows[0].public || Number(bucket.rows[0].file_size_limit) !== 5_242_880 ||
       JSON.stringify(bucket.rows[0].allowed_mime_types) !== JSON.stringify(["image/jpeg", "image/png", "image/webp"])) {
-    throw new Error("The simplified Catalog database contract is incomplete.");
+    throw new Error("The Catalog database contract is incomplete.");
   }
 
   console.info(JSON.stringify({
     verifiedAt: new Date().toISOString(),
-    tables: ["catalog_private.catalog_products"],
+    tables: expectedTables.map(({ table_name }) => `catalog_private.${table_name}`),
     columns: expectedColumns,
+    rarities: rarities.rows,
     ...counts.rows[0],
     runtime: runtime.rows[0],
     productPreviewBucket: bucket.rows[0],

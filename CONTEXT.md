@@ -21,8 +21,8 @@ The official Pokémon expansion containing the depicted card when it can be iden
 _Avoid_: Assuming Collector Number is globally unique
 
 **Rarity**:
-The optional Pokémon card rarity classification. Its controlled order from lower to higher is `C`, `U`, `R`, `RR`, `AR`, `SR`, `SAR`, and `UR`; a missing value is presented as `Unknown rarity`.
-_Avoid_: Card type
+The optional configured Pokémon card classification, identified by a stable code and carrying a customer-facing name, display order, badge colors, and filter visibility. A known card without a rarity symbol is `No mark`, while a missing classification is presented as `Unknown rarity`; display order is not a universal rank across Pokémon eras.
+_Avoid_: Card type, treating No mark as Unknown rarity, universal rarity rank
 
 **Supported Binder Formats**:
 The formats in which a Catalog Product is available: Binder Sleeve, Toploader, or both.

@@ -33,14 +33,27 @@ integration("disposable local Catalog database seam", () => {
       cardName: "Pikachu",
       collectorNumber: "173/165",
       setName: "Scarlet & Violet—151",
-      rarity: "AR",
-      raritySortPosition: 5,
+      rarity: {
+        code: "AR",
+        displayName: "Art Rare",
+        displayOrder: 13,
+        isActive: true,
+        badgeBackgroundColor: "#CCFBF1",
+        badgeForegroundColor: "#134E4A",
+      },
       designName: "Electric Bloom",
       previewUrl: null,
       formatOptions: [{ format: "Binder Sleeve", price: 95_000 }],
     });
     expect(products.find(({ collectorNumber }) => collectorNumber === "synthetic-browser-2")).toMatchObject({
-      rarity: "R",
+      rarity: {
+        code: "R",
+        displayName: "Rare",
+        displayOrder: 3,
+        isActive: true,
+        badgeBackgroundColor: "#DBEAFE",
+        badgeForegroundColor: "#1E3A8A",
+      },
       formatOptions: [
         { format: "Binder Sleeve", price: 50_002 },
         { format: "Toploader", price: 70_002 },
@@ -51,7 +64,6 @@ integration("disposable local Catalog database seam", () => {
       collectorNumber: null,
       setName: null,
       rarity: null,
-      raritySortPosition: null,
       formatOptions: [{ format: "Toploader", price: 70_499 }],
     });
     expect(JSON.parse(JSON.stringify(products))).toEqual(products);
@@ -89,7 +101,7 @@ integration("disposable local Catalog database seam", () => {
       await expect(admin.query(`
         insert into catalog_private.catalog_products (card_name, rarity, binder_sleeve_price)
         values ('Invalid Rarity', 'SECRET', 1)
-      `)).rejects.toMatchObject({ constraint: "catalog_product_rarity_valid" });
+      `)).rejects.toMatchObject({ constraint: "catalog_product_rarity_configured" });
       await expect(admin.query(`
         insert into catalog_private.catalog_products
           (card_name, binder_sleeve_price, product_preview_url)
@@ -136,6 +148,11 @@ integration("disposable local Catalog database seam", () => {
       `);
       expect(visible.rows.length).toBeGreaterThan(0);
       expect(visible.rows.every(({ is_active }) => is_active)).toBe(true);
+      const rarities = await runtime.query<{ code: string }>(`
+        select code from catalog_private.catalog_rarities order by display_order
+      `);
+      expect(rarities.rows).toHaveLength(21);
+      expect(rarities.rows.at(-1)).toEqual({ code: "NO_MARK" });
       await expect(runtime.query(`
         insert into catalog_private.catalog_products (card_name, binder_sleeve_price)
         values ('Runtime Insert', 1)

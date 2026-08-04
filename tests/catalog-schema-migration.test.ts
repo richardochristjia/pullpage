@@ -6,7 +6,22 @@ import { afterEach, describe, expect, test } from "vitest";
 const migrationPaths = [
   "20260730000000_simplify_catalog_source.sql",
   "20260803000000_canonicalize_product_preview_bucket_name.sql",
+  "20260804000000_add_catalog_rarity_metadata.sql",
 ].map((migration) => join(process.cwd(), "supabase/migrations", migration));
+
+function relativeLuminance(hex: string) {
+  const channels = [1, 3, 5].map((offset) => {
+    const value = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first: string, second: string) {
+  const [lighter, darker] = [relativeLuminance(first), relativeLuminance(second)]
+    .sort((left, right) => right - left);
+  return (lighter + 0.05) / (darker + 0.05);
+}
 
 async function currentCatalogDatabase() {
   const db = new PGlite();
@@ -197,7 +212,7 @@ async function migratedCatalogDatabase() {
   return database;
 }
 
-describe("simplified Catalog schema migration", () => {
+describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
   test("preserves identity while mapping visibility, Format Options, and current previews", async () => {
     const database = await migratedCatalogDatabase();
 
@@ -254,6 +269,44 @@ describe("simplified Catalog schema migration", () => {
     ]);
   });
 
+  test("seeds configured Rarity names, display order, and accessible badge colors", async () => {
+    const database = await migratedCatalogDatabase();
+
+    const rarities = await database.query<{
+      code: string;
+      display_name: string;
+      display_order: number;
+      is_active: boolean;
+      badge_background_color: string;
+      badge_foreground_color: string;
+    }>(`
+      select code, display_name, display_order, is_active,
+        badge_background_color, badge_foreground_color
+      from catalog_private.catalog_rarities order by display_order
+    `);
+
+    expect(rarities.rows.map(({ code, display_name }) => [code, display_name])).toEqual([
+      ["C", "Common"], ["U", "Uncommon"], ["R", "Rare"], ["RR", "Double Rare"],
+      ["RRR", "Triple Rare"], ["PR", "Prism Rare"], ["TR", "Trainer Rare"],
+      ["SR", "Super Rare"], ["HR", "Hyper Rare"], ["UR", "Ultra Rare"],
+      ["K", "Radiant Pokémon rarity"], ["A", "Amazing Rare"], ["AR", "Art Rare"],
+      ["SAR", "Special Art Rare"], ["S", "Shiny"], ["SSR", "Shiny Super Rare"],
+      ["ACE", "ACE SPEC"], ["BWR", "Black White Rare"],
+      ["MA", "Mega-era special rarity"], ["MUR", "Mega-era ultra rarity"],
+      ["NO_MARK", "No mark"],
+    ]);
+    expect(rarities.rows.map(({ display_order }) => display_order)).toEqual(
+      Array.from({ length: 21 }, (_, index) => index + 1),
+    );
+    expect(rarities.rows.every(({ is_active }) => is_active)).toBe(true);
+    for (const rarity of rarities.rows) {
+      expect(contrastRatio(
+        rarity.badge_background_color,
+        rarity.badge_foreground_color,
+      ), rarity.code).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   test("keeps only simple row integrity and database-owned identity", async () => {
     const database = await migratedCatalogDatabase();
 
@@ -268,7 +321,7 @@ describe("simplified Catalog schema migration", () => {
     await expect(database.exec(`
       insert into catalog_private.catalog_products (card_name, rarity, binder_sleeve_price)
       values ('Invalid rarity', 'SECRET', 1)
-    `)).rejects.toThrow(/catalog_product_rarity_valid/);
+    `)).rejects.toThrow(/catalog_product_rarity_configured/);
     await expect(database.exec(`
       insert into catalog_private.catalog_products
         (card_name, binder_sleeve_price, product_preview_url)
@@ -326,8 +379,15 @@ describe("simplified Catalog schema migration", () => {
         { id: "11111111-1111-4111-8111-111111111111" },
         { id: "33333333-3333-4333-8333-333333333333" },
       ]);
+      const rarities = await database.query<{ code: string }>(`
+        select code from catalog_private.catalog_rarities order by display_order
+      `);
+      expect(rarities.rows).toHaveLength(21);
       await expect(database.exec(`
         update catalog_private.catalog_products set card_name = 'Runtime write'
+      `)).rejects.toThrow(/permission denied/);
+      await expect(database.exec(`
+        update catalog_private.catalog_rarities set display_name = 'Runtime write'
       `)).rejects.toThrow(/permission denied/);
       await expect(database.exec(`
         insert into catalog_private.catalog_products (card_name, binder_sleeve_price)
@@ -358,7 +418,10 @@ describe("simplified Catalog schema migration", () => {
       where table_schema = 'catalog_private' and table_type = 'BASE TABLE'
       order by table_name
     `);
-    expect(privateTables.rows).toEqual([{ table_name: "catalog_products" }]);
+    expect(privateTables.rows).toEqual([
+      { table_name: "catalog_products" },
+      { table_name: "catalog_rarities" },
+    ]);
 
     const obsoleteSchemas = await database.query<{ count: number }>(`
       select count(*)::integer count from information_schema.schemata

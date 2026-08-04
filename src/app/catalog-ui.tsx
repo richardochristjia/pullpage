@@ -3,10 +3,11 @@
 import { Grid2X2, List, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { PublicCatalogProduct } from "@/catalog/catalog";
+import type { PublicCatalogProduct, PublicCatalogRarity } from "@/catalog/catalog";
 import {
   applyCatalogView,
   CATALOG_PAGE_SIZE,
+  catalogFilterRarities,
   catalogStartingPrice,
   catalogStateFromSearchParams,
   catalogStateToSearchParams,
@@ -28,6 +29,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import styles from "./catalog.module.css";
 import { ProductPreview } from "./product-preview";
+import { RarityBadge, rarityDisplayLabel } from "./rarity-badge";
 
 const idr = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -83,7 +85,7 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
         />
         <div className={styles.productIdentity}>
           <div className={styles.productBadges}>
-            <Badge variant="secondary">{displayCatalogValue(product.rarity, "Unknown rarity")}</Badge>
+            <RarityBadge rarity={product.rarity} />
             {product.formatOptions.map(({ format: optionFormat }) => (
               <Badge key={optionFormat} variant="outline">{optionFormat}</Badge>
             ))}
@@ -116,7 +118,7 @@ function FilterFields({
   idPrefix,
 }: {
   value: FilterState;
-  rarities: string[];
+  rarities: PublicCatalogRarity[];
   onChange: (next: FilterState) => void;
   idPrefix: string;
 }) {
@@ -132,12 +134,14 @@ function FilterFields({
       <fieldset>
         <legend>Rarity</legend>
         <div className={styles.checkboxGrid}>
-          {[...rarities, UNKNOWN_RARITY_FILTER].map((rarity) => {
-            const label = rarity === UNKNOWN_RARITY_FILTER ? "Unknown rarity" : rarity;
-            const id = `${idPrefix}-rarity-${rarity.replaceAll("_", "-")}`;
+          {[
+            ...rarities.map((rarity) => ({ code: rarity.code, label: rarityDisplayLabel(rarity) })),
+            { code: UNKNOWN_RARITY_FILTER, label: "Unknown rarity" },
+          ].map(({ code, label }) => {
+            const id = `${idPrefix}-rarity-${code.replaceAll("_", "-")}`;
             return (
-              <label key={rarity} htmlFor={id}>
-                <Checkbox id={id} checked={value.rarities.includes(rarity)} onCheckedChange={() => toggleRarity(rarity)} />
+              <label key={code} htmlFor={id}>
+                <Checkbox id={id} checked={value.rarities.includes(code)} onCheckedChange={() => toggleRarity(code)} />
                 <span>{label}</span>
               </label>
             );
@@ -196,7 +200,7 @@ function MobileFilters({
 }: {
   products: PublicCatalogProduct[];
   state: CatalogUrlState;
-  rarities: string[];
+  rarities: PublicCatalogRarity[];
   apply: (filters: FilterState) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -245,12 +249,8 @@ export function CatalogBrowser({
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const visible = useMemo(() => applyCatalogView(products, state), [products, state]);
   const rendered = visible.slice(0, state.visibleCount);
-  const rarities = useMemo(() => [
-    ...products
-      .filter((product) => product.rarity !== null)
-      .sort((left, right) => left.raritySortPosition! - right.raritySortPosition!)
-      .map((product) => product.rarity!),
-  ].filter((rarity, index, values) => values.indexOf(rarity) === index), [products]);
+  const rarities = useMemo(() => catalogFilterRarities(products), [products]);
+  const rarityLabels = new Map(rarities.map((rarity) => [rarity.code, rarityDisplayLabel(rarity)]));
   const resultLabel = `${visible.length} ${visible.length === 1 ? "result" : "results"}`;
 
   useEffect(() => {
@@ -329,8 +329,8 @@ export function CatalogBrowser({
               <SelectItem value="card-desc">Card Name: Z–A</SelectItem>
               <SelectItem value="price-asc">Price: low to high</SelectItem>
               <SelectItem value="price-desc">Price: high to low</SelectItem>
-              <SelectItem value="rarity-asc">Rarity: low to high</SelectItem>
-              <SelectItem value="rarity-desc">Rarity: high to low</SelectItem>
+              <SelectItem value="rarity-asc">Rarity: first to last</SelectItem>
+              <SelectItem value="rarity-desc">Rarity: last to first</SelectItem>
             </SelectContent>
           </Select>
         </label>
@@ -355,7 +355,13 @@ export function CatalogBrowser({
       {hasDiscovery && (
         <div className={styles.activeFilters} aria-label="Active filters">
           {state.query && <FilterBadge label={`Search: ${state.query}`} remove={() => patch({ query: "" })} />}
-          {state.rarities.map((rarity) => <FilterBadge key={rarity} label={rarity === UNKNOWN_RARITY_FILTER ? "Unknown rarity" : rarity} remove={() => patch({ rarities: state.rarities.filter((item) => item !== rarity) })} />)}
+          {state.rarities.map((rarity) => <FilterBadge
+            key={rarity}
+            label={rarity === UNKNOWN_RARITY_FILTER
+              ? "Unknown rarity"
+              : rarityLabels.get(rarity) ?? rarity}
+            remove={() => patch({ rarities: state.rarities.filter((item) => item !== rarity) })}
+          />)}
           {state.format !== "any" && <FilterBadge label={FORMAT_LABELS[state.format]} remove={() => patch({ format: "any" })} />}
           {state.minimumPrice !== null && <FilterBadge label={`Min ${idr.format(state.minimumPrice)}`} remove={() => patch({ minimumPrice: null })} />}
           {state.maximumPrice !== null && <FilterBadge label={`Max ${idr.format(state.maximumPrice)}`} remove={() => patch({ maximumPrice: null })} />}

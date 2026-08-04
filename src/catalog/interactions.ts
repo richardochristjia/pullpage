@@ -108,6 +108,15 @@ export function catalogStartingPrice(product: PublicCatalogProduct, format: Cata
   return Math.min(...relevantFormatOptions(product, format).map(({ price }) => price));
 }
 
+export function catalogFilterRarities(products: readonly PublicCatalogProduct[]) {
+  return products
+    .flatMap((product) => product.rarity?.isActive ? [product.rarity] : [])
+    .sort((left, right) => left.displayOrder - right.displayOrder)
+    .filter((rarity, index, values) =>
+      values.findIndex(({ code }) => code === rarity.code) === index,
+    );
+}
+
 export function applyCatalogView(
   products: readonly PublicCatalogProduct[],
   state: CatalogViewState,
@@ -119,7 +128,7 @@ export function applyCatalogView(
       [product.cardName, product.collectorNumber, product.setName, product.designName]
         .some((value) => value !== null && searchText(value).includes(query));
     const matchesRarity = state.rarities.length === 0 || state.rarities.some((rarity) =>
-      rarity === UNKNOWN_RARITY_FILTER ? product.rarity === null : product.rarity === rarity,
+      rarity === UNKNOWN_RARITY_FILTER ? product.rarity === null : product.rarity?.code === rarity,
     );
     const matchesFormat = matchesFormatFilter(product, state.format);
     const startingPrice = matchesFormat ? catalogStartingPrice(product, state.format) : Number.POSITIVE_INFINITY;
@@ -158,12 +167,12 @@ export function applyCatalogView(
       case "price-desc":
         return eligiblePrice(right) - eligiblePrice(left) || text(left.cardName, right.cardName) || slug(left, right);
       case "rarity-asc":
-        return (left.raritySortPosition ?? Number.POSITIVE_INFINITY) -
-          (right.raritySortPosition ?? Number.POSITIVE_INFINITY) || slug(left, right);
+        return (left.rarity?.displayOrder ?? Number.POSITIVE_INFINITY) -
+          (right.rarity?.displayOrder ?? Number.POSITIVE_INFINITY) || slug(left, right);
       case "rarity-desc": {
-        if (left.raritySortPosition === null) return right.raritySortPosition === null ? slug(left, right) : 1;
-        if (right.raritySortPosition === null) return -1;
-        return right.raritySortPosition - left.raritySortPosition || slug(left, right);
+        if (left.rarity === null) return right.rarity === null ? slug(left, right) : 1;
+        if (right.rarity === null) return -1;
+        return right.rarity.displayOrder - left.rarity.displayOrder || slug(left, right);
       }
     }
   });

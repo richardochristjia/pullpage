@@ -8,6 +8,7 @@ import { ModalBackToCatalog } from "./modal-back-to-catalog";
 import { ProductPreviewLightbox } from "./product-preview-lightbox";
 import { ShareProduct } from "./share-product";
 import styles from "./product-detail.module.css";
+import { RarityBadge, rarityDescription } from "./rarity-badge";
 
 const idr = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -36,13 +37,13 @@ export function ProductDetail({ product, headingId, modal = false }: {
         <p className={styles.eyebrow}>Catalog Product</p>
         <Heading id={headingId}>{productHeading(product)}</Heading>
         <div className={styles.identityBadges}>
-          <Badge variant="secondary">{displayCatalogValue(product.rarity, "Unknown rarity")}</Badge>
+          <RarityBadge rarity={product.rarity} />
           <Badge variant="outline">{displayCatalogValue(product.collectorNumber, "Unknown number")}</Badge>
         </div>
         <dl className={styles.facts}>
           <div><dt>Set Name</dt><dd>{displayCatalogValue(product.setName, "Unknown set")}</dd></div>
           <div><dt>Collector Number</dt><dd>{displayCatalogValue(product.collectorNumber, "Unknown number")}</dd></div>
-          <div><dt>Rarity</dt><dd>{displayCatalogValue(product.rarity, "Unknown rarity")}</dd></div>
+          <div><dt>Rarity</dt><dd>{product.rarity === null ? "Unknown rarity" : rarityDescription(product.rarity)}</dd></div>
           {product.designName && <div><dt>Design Name</dt><dd>{product.designName}</dd></div>}
         </dl>
         <section className={styles.options} aria-labelledby={`${headingId}-formats`}>

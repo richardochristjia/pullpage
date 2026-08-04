@@ -1,8 +1,17 @@
-import type { CatalogProduct } from "@/generated/prisma/client";
+import type { CatalogProduct, CatalogRarity } from "@/generated/prisma/client";
 
 export type CatalogFormatOption = {
   format: "Binder Sleeve" | "Toploader";
   price: number;
+};
+
+export type PublicCatalogRarity = {
+  code: string;
+  displayName: string;
+  displayOrder: number;
+  isActive: boolean;
+  badgeBackgroundColor: string;
+  badgeForegroundColor: string;
 };
 
 export type PublicCatalogProduct = {
@@ -10,12 +19,21 @@ export type PublicCatalogProduct = {
   cardName: string | null;
   collectorNumber: string | null;
   setName: string | null;
-  rarity: string | null;
-  raritySortPosition: number | null;
+  rarity: PublicCatalogRarity | null;
   designName: string | null;
   previewUrl: string | null;
   formatOptions: CatalogFormatOption[];
 };
+
+type CatalogRarityRead = Pick<
+  CatalogRarity,
+  | "code"
+  | "displayName"
+  | "displayOrder"
+  | "isActive"
+  | "badgeBackgroundColor"
+  | "badgeForegroundColor"
+>;
 
 export type CatalogProductRead = Pick<
   CatalogProduct,
@@ -23,17 +41,11 @@ export type CatalogProductRead = Pick<
   | "cardName"
   | "collectorNumber"
   | "setName"
-  | "rarity"
   | "designName"
   | "binderSleevePrice"
   | "toploaderPrice"
   | "productPreviewUrl"
->;
-
-const RARITY_SORT_POSITIONS = new Map<string, number>([
-  ["C", 1], ["U", 2], ["R", 3], ["RR", 4],
-  ["AR", 5], ["SR", 6], ["SAR", 7], ["UR", 8],
-]);
+> & { rarityDefinition: CatalogRarityRead | null };
 
 export function toPublicCatalogProduct(product: CatalogProductRead): PublicCatalogProduct {
   const formatOptions: CatalogFormatOption[] = [];
@@ -49,8 +61,7 @@ export function toPublicCatalogProduct(product: CatalogProductRead): PublicCatal
     cardName: product.cardName,
     collectorNumber: product.collectorNumber,
     setName: product.setName,
-    rarity: product.rarity,
-    raritySortPosition: product.rarity === null ? null : RARITY_SORT_POSITIONS.get(product.rarity) ?? null,
+    rarity: product.rarityDefinition,
     designName: product.designName,
     previewUrl: product.productPreviewUrl,
     formatOptions,

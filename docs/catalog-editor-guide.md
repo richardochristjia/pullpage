@@ -23,7 +23,7 @@ You may edit these fields:
 | `card_name` | Optional card name. |
 | `collector_number` | Optional collector number. |
 | `set_name` | Optional set name. |
-| `rarity` | Optional. Use `C`, `U`, `R`, `RR`, `AR`, `SR`, `SAR`, or `UR`. |
+| `rarity` | Optional configured Rarity code. Use `C`, `U`, `R`, `RR`, `RRR`, `PR`, `TR`, `SR`, `HR`, `UR`, `K`, `A`, `AR`, `SAR`, `S`, `SSR`, `ACE`, `BWR`, `MA`, `MUR`, or `NO_MARK`. Leave it `NULL` only when the Rarity is unknown. |
 | `design_name` | Optional name that distinguishes the extended-art design. |
 | `binder_sleeve_price` | Positive whole IDR amount, or `NULL` when Binder Sleeve is not offered. |
 | `toploader_price` | Positive whole IDR amount, or `NULL` when Toploader is not offered. |
@@ -31,7 +31,9 @@ You may edit these fields:
 
 At least one price is required. A positive Binder Sleeve price creates the Binder Sleeve Format Option, and a positive Toploader price creates the Toploader Format Option. Enter both prices to offer both. Do not use `0`, negative values, decimals, currency symbols, or separators. Use `NULL`, not zero, for a Format Option that is not offered.
 
-Blank optional text is stored as missing. Duplicate card facts are allowed. The database creates the ID and permanent slug and maintains both timestamps.
+Blank optional text is stored as missing. Duplicate card facts are allowed. The database creates the ID and permanent slug and maintains both timestamps. Use `NO_MARK` when the card is known to have no rarity symbol; this is different from leaving Rarity unknown.
+
+Rarity names, display order, badge colors, and filter visibility are maintained in `catalog_private.catalog_rarities`. Its `is_active` field controls whether that Rarity appears in the Catalog filter list; making a Rarity inactive does not remove its badge or facts from products that already use it. Do not change this reference data during an ordinary Catalog Product edit.
 
 ## Create a Catalog Product
 

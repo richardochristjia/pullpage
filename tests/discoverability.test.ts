@@ -14,7 +14,7 @@ const product = {
   cardName: "  Pikachu  ",
   collectorNumber: "173/165",
   setName: "Scarlet & Violet—151",
-  rarity: "SAR",
+  rarity: { code: "SAR" },
   designName: " Electric   Bloom ",
   previewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000001/catalog-products/pikachu/electric-bloom.png",
   formatOptions: [

@@ -2,11 +2,21 @@ import { describe, expect, test } from "vitest";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import {
   applyCatalogView,
+  catalogFilterRarities,
   catalogStateFromSearchParams,
   catalogStateToSearchParams,
   UNKNOWN_RARITY_FILTER,
   type CatalogViewState,
 } from "@/catalog/interactions";
+
+const rarity = (code: string, displayOrder: number, isActive = true) => ({
+  code,
+  displayName: code,
+  displayOrder,
+  isActive,
+  badgeBackgroundColor: "#FFFFFF",
+  badgeForegroundColor: "#000000",
+});
 
 const product = (overrides: Partial<PublicCatalogProduct>): PublicCatalogProduct => ({
   slug: "catalog-product-00000000",
@@ -14,7 +24,6 @@ const product = (overrides: Partial<PublicCatalogProduct>): PublicCatalogProduct
   collectorNumber: null,
   setName: null,
   rarity: null,
-  raritySortPosition: null,
   designName: null,
   previewUrl: null,
   formatOptions: [{ format: "Binder Sleeve", price: 100_000 }],
@@ -31,6 +40,17 @@ const initialState: CatalogViewState = {
 };
 
 describe("Catalog interactions", () => {
+  test("lists only active, used Rarities as unique filter options in configured order", () => {
+    const products = [
+      product({ slug: "active-ar", rarity: rarity("AR", 13) }),
+      product({ slug: "inactive-sr", rarity: rarity("SR", 8, false) }),
+      product({ slug: "duplicate-ar", rarity: rarity("AR", 13) }),
+      product({ slug: "unknown" }),
+    ];
+
+    expect(catalogFilterRarities(products).map(({ code }) => code)).toEqual(["AR"]);
+  });
+
   test("searches supplied facts while ignoring case, accents, spaces, slashes, and hyphens", () => {
     const products = [
       product({ slug: "flabebe", cardName: "Flabébé", collectorNumber: "001/100", setName: "Set-One", designName: "Garden Glow" }),
@@ -47,16 +67,15 @@ describe("Catalog interactions", () => {
       product({
         slug: "both-ar",
         cardName: "Pikachu",
-        rarity: "AR",
-        raritySortPosition: 5,
+        rarity: rarity("AR", 13),
         formatOptions: [
           { format: "Binder Sleeve", price: 90_000 },
           { format: "Toploader", price: 150_000 },
         ],
       }),
-      product({ slug: "sleeve-sr", cardName: "Pikachu", rarity: "SR", raritySortPosition: 6 }),
+      product({ slug: "sleeve-sr", cardName: "Pikachu", rarity: rarity("SR", 8) }),
       product({ slug: "unknown", cardName: "Pikachu" }),
-      product({ slug: "other", cardName: "Eevee", rarity: "AR", raritySortPosition: 5 }),
+      product({ slug: "other", cardName: "Eevee", rarity: rarity("AR", 13) }),
     ];
 
     const matches = applyCatalogView(products, {
@@ -119,9 +138,9 @@ describe("Catalog interactions", () => {
   test("sorts Card Name, eligible price, and configured Rarity with missing values last and stable ties", () => {
     const products = [
       product({ slug: "unknown", cardName: null }),
-      product({ slug: "eevee-z", cardName: "Éevee", collectorNumber: "010", designName: "Zed", rarity: "SR", raritySortPosition: 6, formatOptions: [{ format: "Binder Sleeve", price: 120_000 }] }),
-      product({ slug: "eevee-a", cardName: "Eevee", collectorNumber: "002", designName: "Alpha", rarity: "AR", raritySortPosition: 5, formatOptions: [{ format: "Binder Sleeve", price: 90_000 }] }),
-      product({ slug: "bulba", cardName: "Bulbasaur", rarity: "AR", raritySortPosition: 5, formatOptions: [{ format: "Toploader", price: 90_000 }] }),
+      product({ slug: "eevee-z", cardName: "Éevee", collectorNumber: "010", designName: "Zed", rarity: rarity("SR", 8), formatOptions: [{ format: "Binder Sleeve", price: 120_000 }] }),
+      product({ slug: "eevee-a", cardName: "Eevee", collectorNumber: "002", designName: "Alpha", rarity: rarity("AR", 13), formatOptions: [{ format: "Binder Sleeve", price: 90_000 }] }),
+      product({ slug: "bulba", cardName: "Bulbasaur", rarity: rarity("AR", 13), formatOptions: [{ format: "Toploader", price: 90_000 }] }),
     ];
     const slugs = (sort: CatalogViewState["sort"], format: CatalogViewState["format"] = "any") =>
       applyCatalogView(products, { ...initialState, sort, format }).map(({ slug }) => slug);
@@ -130,8 +149,8 @@ describe("Catalog interactions", () => {
     expect(slugs("card-desc")).toEqual(["eevee-a", "eevee-z", "bulba", "unknown"]);
     expect(slugs("price-asc", "binder-sleeve")).toEqual(["eevee-a", "unknown", "eevee-z"]);
     expect(slugs("price-desc")).toEqual(["eevee-z", "unknown", "bulba", "eevee-a"]);
-    expect(slugs("rarity-asc")).toEqual(["bulba", "eevee-a", "eevee-z", "unknown"]);
-    expect(slugs("rarity-desc")).toEqual(["eevee-z", "bulba", "eevee-a", "unknown"]);
+    expect(slugs("rarity-asc")).toEqual(["eevee-z", "bulba", "eevee-a", "unknown"]);
+    expect(slugs("rarity-desc")).toEqual(["bulba", "eevee-a", "eevee-z", "unknown"]);
 
     const tied = [product({ slug: "same-z", cardName: "Same" }), product({ slug: "same-a", cardName: "Same" })];
     expect(applyCatalogView(tied, initialState).map(({ slug }) => slug)).toEqual(["same-a", "same-z"]);

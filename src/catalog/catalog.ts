@@ -8,7 +8,11 @@ import {
   type CatalogProductRead,
 } from "./public-catalog-product";
 
-export type { CatalogFormatOption, PublicCatalogProduct } from "./public-catalog-product";
+export type {
+  CatalogFormatOption,
+  PublicCatalogProduct,
+  PublicCatalogRarity,
+} from "./public-catalog-product";
 
 export class CatalogUnavailableError extends Error {
   constructor() {
@@ -51,7 +55,16 @@ async function queryActiveCatalogProducts(databaseUrl: string): Promise<CatalogP
       cardName: true,
       collectorNumber: true,
       setName: true,
-      rarity: true,
+      rarityDefinition: {
+        select: {
+          code: true,
+          displayName: true,
+          displayOrder: true,
+          isActive: true,
+          badgeBackgroundColor: true,
+          badgeForegroundColor: true,
+        },
+      },
       designName: true,
       binderSleevePrice: true,
       toploaderPrice: true,

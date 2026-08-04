@@ -5,7 +5,7 @@ import { verifyMigrationHistory, validateMigrationSafety } from "@/catalog/migra
 
 describe("Catalog migration policy", () => {
   test("protects the reviewed immutable migration history", () => {
-    expect(verifyMigrationHistory(join(process.cwd(), "supabase/migrations"), join(process.cwd(), "supabase/migration-manifest.json"))).toMatchObject({ valid: true, migrationCount: 19 });
+    expect(verifyMigrationHistory(join(process.cwd(), "supabase/migrations"), join(process.cwd(), "supabase/migration-manifest.json"))).toMatchObject({ valid: true, migrationCount: 20 });
   });
 
   test("requires expand/backfill/contract evidence for new destructive SQL", () => {

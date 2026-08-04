@@ -6,7 +6,14 @@ const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead =>
   cardName: "Pikachu",
   collectorNumber: "001/001",
   setName: "Mapping Test",
-  rarity: "AR",
+  rarityDefinition: {
+    code: "AR",
+    displayName: "Art Rare",
+    displayOrder: 13,
+    isActive: true,
+    badgeBackgroundColor: "#CCFBF1",
+    badgeForegroundColor: "#134E4A",
+  },
   designName: "Electric Frame",
   binderSleevePrice: 90_000,
   toploaderPrice: 120_000,
@@ -15,14 +22,20 @@ const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead =>
 });
 
 describe("public Catalog Product seam", () => {
-  test("derives public Format Options and Rarity order from one active Catalog Product", () => {
+  test("maps configured Rarity metadata and derives public Format Options", () => {
     expect(toPublicCatalogProduct(row())).toEqual({
       slug: "pikachu-001-001-electric-frame-0123abcd",
       cardName: "Pikachu",
       collectorNumber: "001/001",
       setName: "Mapping Test",
-      rarity: "AR",
-      raritySortPosition: 5,
+      rarity: {
+        code: "AR",
+        displayName: "Art Rare",
+        displayOrder: 13,
+        isActive: true,
+        badgeBackgroundColor: "#CCFBF1",
+        badgeForegroundColor: "#134E4A",
+      },
       designName: "Electric Frame",
       previewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/mapping/pikachu.png",
       formatOptions: [
@@ -33,9 +46,8 @@ describe("public Catalog Product seam", () => {
   });
 
   test("derives only the Format Option whose price exists", () => {
-    expect(toPublicCatalogProduct(row({ rarity: null, toploaderPrice: null }))).toMatchObject({
+    expect(toPublicCatalogProduct(row({ rarityDefinition: null, toploaderPrice: null }))).toMatchObject({
       rarity: null,
-      raritySortPosition: null,
       formatOptions: [{ format: "Binder Sleeve", price: 90_000 }],
     });
   });

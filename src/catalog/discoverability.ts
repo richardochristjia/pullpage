@@ -16,7 +16,7 @@ type DiscoverableCatalogProduct = {
   cardName: string | null;
   collectorNumber: string | null;
   setName: string | null;
-  rarity: string | null;
+  rarity: { code: string } | null;
   designName: string | null;
   previewUrl: string | null;
   formatOptions: Array<{ format: "Binder Sleeve" | "Toploader"; price: number }>;
@@ -63,7 +63,7 @@ export function productDiscoverability(product: DiscoverableCatalogProduct) {
   const identityFacts: string[] = [];
   if (product.collectorNumber) identityFacts.push(`Collector Number ${normalizeMetadataText(product.collectorNumber)}.`);
   if (product.setName) identityFacts.push(`Set Name ${normalizeMetadataText(product.setName)}.`);
-  if (product.rarity) identityFacts.push(`Rarity ${normalizeMetadataText(product.rarity)}.`);
+  if (product.rarity) identityFacts.push(`Rarity ${normalizeMetadataText(product.rarity.code)}.`);
   const requiredFacts: string[] = [];
   const formats = product.formatOptions.map(({ format }) => format);
   if (formats.length) {
