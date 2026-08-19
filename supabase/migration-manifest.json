@@ -21,6 +21,7 @@
     "20260730000000_simplify_catalog_source.sql": "f4fc275650656e04e2c3a87314ce9579fca5a2ee8af4d9397a3d1bbf41d1bf4d",
     "20260803000000_canonicalize_product_preview_bucket_name.sql": "20a2d7542867743f4d194fd66c57481e064a6c556e6e165a11a623ae9f820ee6",
     "20260804000000_add_catalog_rarity_metadata.sql": "b4cb3f264539a82b7df9a2c756110a043606c0dbd71fa5b3d757d9ee6e7c7d9e",
-    "20260805000000_add_regional_printing_facts.sql": "cb263cea9cd72c957355e4e94a106e457ad1e0bfded6cd31b6e8688540fb5219"
+    "20260805000000_add_regional_printing_facts.sql": "cb263cea9cd72c957355e4e94a106e457ad1e0bfded6cd31b6e8688540fb5219",
+    "20260806000000_add_spreadsheet_rarities.sql": "dd486de7c1c926d3257b5e387c22e29c6cf4f677673ea3fd0c4d072c4a19c5cb"
   }
 }

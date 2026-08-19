@@ -58,7 +58,7 @@ try {
   const expectedTables = [{ table_name: "catalog_products" }, { table_name: "catalog_rarities" }];
   if (JSON.stringify(tables.rows) !== JSON.stringify(expectedTables) ||
       JSON.stringify(columns.rows.map(({ column_name }) => column_name)) !== JSON.stringify(expectedColumns) ||
-      rarities.rows.length !== 21 || rarities.rows.at(-1)?.code !== "NO_MARK" ||
+      rarities.rows.length !== 26 || rarities.rows.at(-1)?.code !== "VINTAGE" ||
       runtime.rows.length !== 1 || !runtime.rows[0].can_select || runtime.rows[0].can_write ||
       !runtime.rows[0].can_select_rarities || runtime.rows[0].can_write_rarities || !runtime.rows[0].active_policy ||
       bucket.rows.length !== 1 || bucket.rows[0].name !== bucket.rows[0].id || !bucket.rows[0].public || Number(bucket.rows[0].file_size_limit) !== 5_242_880 ||

@@ -79,11 +79,11 @@ integration("disposable local Catalog database seam", () => {
   test("lists every active configured Rarity with its global active-product count", async () => {
     const rarities = await listCatalogRarityFilterOptions({ databaseUrl });
 
-    expect(rarities).toHaveLength(21);
+    expect(rarities).toHaveLength(26);
     expect(rarities.find(({ code }) => code === "AR")).toMatchObject({ productCount: 56 });
     expect(rarities.find(({ code }) => code === "RRR")).toMatchObject({ productCount: 0 });
     expect(rarities.map(({ displayOrder }) => displayOrder)).toEqual(
-      Array.from({ length: 21 }, (_, index) => index + 1),
+      Array.from({ length: 26 }, (_, index) => index + 1),
     );
   });
 
@@ -187,8 +187,8 @@ integration("disposable local Catalog database seam", () => {
       const rarities = await runtime.query<{ code: string }>(`
         select code from catalog_private.catalog_rarities order by display_order
       `);
-      expect(rarities.rows).toHaveLength(21);
-      expect(rarities.rows.at(-1)).toEqual({ code: "NO_MARK" });
+      expect(rarities.rows).toHaveLength(26);
+      expect(rarities.rows.at(-1)).toEqual({ code: "VINTAGE" });
       await expect(runtime.query(`
         insert into catalog_private.catalog_products (card_name, binder_sleeve_price)
         values ('Runtime Insert', 1)

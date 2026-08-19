@@ -8,6 +8,7 @@ const migrationPaths = [
   "20260803000000_canonicalize_product_preview_bucket_name.sql",
   "20260804000000_add_catalog_rarity_metadata.sql",
   "20260805000000_add_regional_printing_facts.sql",
+  "20260806000000_add_spreadsheet_rarities.sql",
 ].map((migration) => join(process.cwd(), "supabase/migrations", migration));
 
 function relativeLuminance(hex: string) {
@@ -237,7 +238,7 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
     expect(products.rows).toEqual([{ id: "44444444-4444-4444-8444-444444444444" }]);
 
     const rarities = await database.query("select code from catalog_private.catalog_rarities");
-    expect(rarities.rows).toHaveLength(21);
+    expect(rarities.rows).toHaveLength(26);
     const previewObjects = await database.query("select id from storage.objects order by id");
     expect(previewObjects.rows).toEqual([{ id: 99 }]);
   });
@@ -266,10 +267,12 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
       ["SAR", "Special Art Rare"], ["S", "Shiny"], ["SSR", "Shiny Super Rare"],
       ["ACE", "ACE SPEC"], ["BWR", "Black White Rare"],
       ["MA", "Mega-era special rarity"], ["MUR", "Mega-era ultra rarity"],
-      ["NO_MARK", "No mark"],
+      ["NO_MARK", "No mark"], ["CHR", "Character Rare"], ["PROMO", "Promo"],
+      ["MIXED", "Mixed"], ["SR_AA", "Secret Rare Alternate Art"],
+      ["VINTAGE", "Vintage"],
     ]);
     expect(rarities.rows.map(({ display_order }) => display_order)).toEqual(
-      Array.from({ length: 21 }, (_, index) => index + 1),
+      Array.from({ length: 26 }, (_, index) => index + 1),
     );
     expect(rarities.rows.every(({ is_active }) => is_active)).toBe(true);
     for (const rarity of rarities.rows) {
@@ -367,7 +370,7 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
       const rarities = await database.query<{ code: string }>(`
         select code from catalog_private.catalog_rarities order by display_order
       `);
-      expect(rarities.rows).toHaveLength(21);
+      expect(rarities.rows).toHaveLength(26);
       await expect(database.exec(`
         update catalog_private.catalog_products set card_name = 'Runtime write'
       `)).rejects.toThrow(/permission denied/);

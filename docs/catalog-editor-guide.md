@@ -25,7 +25,7 @@ You may edit these fields:
 | `japanese_collector_number` | Optional identifying number printed on the Japanese card. |
 | `english_set_name` | Optional official English expansion name. |
 | `japanese_set_name` | Optional official Japanese expansion name. |
-| `rarity` | Optional configured Rarity code. Use `C`, `U`, `R`, `RR`, `RRR`, `PR`, `TR`, `SR`, `HR`, `UR`, `K`, `A`, `AR`, `SAR`, `S`, `SSR`, `ACE`, `BWR`, `MA`, `MUR`, or `NO_MARK`. Leave it `NULL` only when the Rarity is unknown. |
+| `rarity` | Optional configured Rarity code. Use `C`, `U`, `R`, `RR`, `RRR`, `PR`, `TR`, `SR`, `HR`, `UR`, `K`, `A`, `AR`, `SAR`, `S`, `SSR`, `ACE`, `BWR`, `MA`, `MUR`, `NO_MARK`, `CHR`, `PROMO`, `MIXED`, `SR_AA`, or `VINTAGE`. Leave it `NULL` only when the Rarity is unknown. |
 | `design_name` | Optional name that distinguishes the extended-art design. |
 | `binder_sleeve_price` | Positive whole IDR amount, or `NULL` when Binder Sleeve is not offered. |
 | `toploader_price` | Positive whole IDR amount, or `NULL` when Toploader is not offered. |
