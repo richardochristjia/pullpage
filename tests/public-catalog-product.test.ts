@@ -8,8 +8,10 @@ import {
 const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead => ({
   slug: "pikachu-001-001-electric-frame-0123abcd",
   cardName: "Pikachu",
-  collectorNumber: "001/001",
-  setName: "Mapping Test",
+  englishCollectorNumber: "001/001",
+  japaneseCollectorNumber: "025/025",
+  englishSetName: "Mapping Test EN",
+  japaneseSetName: "Mapping Test JP",
   rarityDefinition: {
     code: "AR",
     displayName: "Art Rare",
@@ -50,8 +52,10 @@ describe("public Catalog Product seam", () => {
     expect(toPublicCatalogProduct(row())).toEqual({
       slug: "pikachu-001-001-electric-frame-0123abcd",
       cardName: "Pikachu",
-      collectorNumber: "001/001",
-      setName: "Mapping Test",
+      englishCollectorNumber: "001/001",
+      japaneseCollectorNumber: "025/025",
+      englishSetName: "Mapping Test EN",
+      japaneseSetName: "Mapping Test JP",
       rarity: {
         code: "AR",
         displayName: "Art Rare",

@@ -21,8 +21,10 @@ export type PublicCatalogRarityFilterOption = PublicCatalogRarity & {
 export type PublicCatalogProduct = {
   slug: string;
   cardName: string | null;
-  collectorNumber: string | null;
-  setName: string | null;
+  englishCollectorNumber: string | null;
+  japaneseCollectorNumber: string | null;
+  englishSetName: string | null;
+  japaneseSetName: string | null;
   rarity: PublicCatalogRarity | null;
   designName: string | null;
   previewUrl: string | null;
@@ -47,8 +49,10 @@ export type CatalogProductRead = Pick<
   CatalogProduct,
   | "slug"
   | "cardName"
-  | "collectorNumber"
-  | "setName"
+  | "englishCollectorNumber"
+  | "japaneseCollectorNumber"
+  | "englishSetName"
+  | "japaneseSetName"
   | "designName"
   | "binderSleevePrice"
   | "toploaderPrice"
@@ -74,8 +78,10 @@ export function toPublicCatalogProduct(product: CatalogProductRead): PublicCatal
   return {
     slug: product.slug,
     cardName: product.cardName,
-    collectorNumber: product.collectorNumber,
-    setName: product.setName,
+    englishCollectorNumber: product.englishCollectorNumber,
+    japaneseCollectorNumber: product.japaneseCollectorNumber,
+    englishSetName: product.englishSetName,
+    japaneseSetName: product.japaneseSetName,
     rarity: product.rarityDefinition,
     designName: product.designName,
     previewUrl: product.productPreviewUrl,

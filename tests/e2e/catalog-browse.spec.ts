@@ -26,12 +26,17 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
   await search.fill("pika-chu");
   await expect(page.getByRole("status")).toHaveText("1 result");
-  const pikachu = page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ });
-  await expect(pikachu).toContainText("Scarlet & Violet—151");
+  const pikachu = page.getByRole("link", { name: /Pikachu.*English Printing 173\/165.*Japanese Printing 205\/165.*Electric Bloom/ });
+  await expect(pikachu).toContainText("EN · 173/165 · Scarlet & Violet—151");
+  await expect(pikachu).toContainText("JP · 205/165 · Pokémon Card 151");
 
   await pikachu.focus();
   await pikachu.click();
   const dialog = page.getByRole("dialog", { name: "Pikachu — Electric Bloom" });
+  await expect(dialog.getByRole("heading", { name: "English Printing" })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "Japanese Printing" })).toBeVisible();
+  await expect(dialog).toContainText("Scarlet & Violet—151");
+  await expect(dialog).toContainText("Pokémon Card 151");
   await expect(dialog).toContainText("Binder Sleeve");
   await expect(page.getByRole("button", { name: "Close product details" })).toBeFocused();
   await expect(page.locator("#app-content")).toHaveAttribute("inert", "");
@@ -76,8 +81,8 @@ test("renders missing optional facts and excludes inactive Catalog Products", as
   await page.goto("/");
   await page.getByRole("searchbox", { name: "Search Catalog Products" }).fill("synthetic browser fixture");
 
-  const missing = page.getByRole("link", { name: /No Name.*Unknown number.*Synthetic Browser Fixture/ });
-  await expect(missing).toContainText("Unknown set");
+  const missing = page.getByRole("link", { name: /No Name.*Regional printing unknown.*Synthetic Browser Fixture/ });
+  await expect(missing).toContainText("Regional printing unknown");
   await expect(missing).toContainText("Unknown rarity");
   await expect(missing.getByText("Preview coming soon")).toBeVisible();
   await expect(page.getByText("Inactive Browser Fixture")).toHaveCount(0);

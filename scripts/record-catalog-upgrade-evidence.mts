@@ -16,7 +16,8 @@ try {
     from catalog_private.catalog_products
   `);
   const facts = await pool.query(`
-    select card_name, collector_number, set_name, rarity,
+    select card_name, english_collector_number, japanese_collector_number,
+      english_set_name, japanese_set_name, rarity,
       binder_sleeve_price, toploader_price, is_active
     from catalog_private.catalog_products order by slug limit 5
   `);

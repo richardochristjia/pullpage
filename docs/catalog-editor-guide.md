@@ -21,8 +21,10 @@ You may edit these fields:
 | --- | --- |
 | `is_active` | Checked means publicly visible everywhere. Unchecked means publicly absent. New rows default to checked. |
 | `card_name` | Optional card name. |
-| `collector_number` | Optional collector number. |
-| `set_name` | Optional set name. |
+| `english_collector_number` | Optional identifying number printed on the English card. |
+| `japanese_collector_number` | Optional identifying number printed on the Japanese card. |
+| `english_set_name` | Optional official English expansion name. |
+| `japanese_set_name` | Optional official Japanese expansion name. |
 | `rarity` | Optional configured Rarity code. Use `C`, `U`, `R`, `RR`, `RRR`, `PR`, `TR`, `SR`, `HR`, `UR`, `K`, `A`, `AR`, `SAR`, `S`, `SSR`, `ACE`, `BWR`, `MA`, `MUR`, or `NO_MARK`. Leave it `NULL` only when the Rarity is unknown. |
 | `design_name` | Optional name that distinguishes the extended-art design. |
 | `binder_sleeve_price` | Positive whole IDR amount, or `NULL` when Binder Sleeve is not offered. |
@@ -31,7 +33,7 @@ You may edit these fields:
 
 At least one price is required. A positive Binder Sleeve price creates the Binder Sleeve Format Option, and a positive Toploader price creates the Toploader Format Option. Enter both prices to offer both. Do not use `0`, negative values, decimals, currency symbols, or separators. Use `NULL`, not zero, for a Format Option that is not offered.
 
-Blank optional text is stored as missing. Duplicate card facts are allowed. The database creates the ID and permanent slug and maintains both timestamps. Use `NO_MARK` when the card is known to have no rarity symbol; this is different from leaving Rarity unknown.
+Blank optional text is stored as missing. Every regional field is independently optional: a Set Name does not require a Collector Number, and a missing value means unknown or unrecorded. Record English and Japanese facts on the same row only when the same extended-art design fits the same card illustration. Duplicate card facts are allowed. The database creates the ID and permanent slug and maintains both timestamps. Use `NO_MARK` when the card is known to have no rarity symbol; this is different from leaving Rarity unknown.
 
 Rarity names, display order, badge colors, and filter visibility are maintained in `catalog_private.catalog_rarities`. Its `is_active` field controls whether that Rarity appears in the Catalog filter list; every active Rarity is listed in `display_order` with its active-product count, and an active Rarity with no products remains visible but disabled. Making a Rarity inactive does not remove its badge or facts from products that already use it. Do not change this reference data during an ordinary Catalog Product edit.
 

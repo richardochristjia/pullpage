@@ -21,6 +21,7 @@ import {
   type CatalogUrlState,
 } from "@/catalog/interactions";
 import { displayCatalogValue } from "@/catalog/presentation";
+import { catalogProductRegionalPrintings, regionalPrintingFacts } from "@/catalog/regional-printing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -63,8 +64,11 @@ function numberOrNull(value: string) {
 
 function CatalogProductItem({ product, view, format }: ProductItemProps) {
   const cardName = displayCatalogValue(product.cardName, "No Name");
-  const collectorNumber = displayCatalogValue(product.collectorNumber, "Unknown number");
-  const accessibleName = [cardName, collectorNumber, product.designName].filter(Boolean).join(" — ");
+  const regionalPrintings = catalogProductRegionalPrintings(product);
+  const regionalIdentity = regionalPrintings.length > 0
+    ? regionalPrintings.map((printing) => `${printing.label} ${regionalPrintingFacts(printing)}`)
+    : ["Regional printing unknown"];
+  const accessibleName = [cardName, ...regionalIdentity, product.designName].filter(Boolean).join(" — ");
   const startingPrice = catalogStartingPrice(product, format);
   const multiplePrices = format === "any" && product.formatOptions.length > 1 || format === "both";
 
@@ -95,7 +99,15 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
           </div>
           <h3>{cardName}</h3>
           {product.designName && <p className={styles.designName}>{product.designName}</p>}
-          <p className={styles.cardMeta}>{collectorNumber}<span aria-hidden="true"> · </span>{displayCatalogValue(product.setName, "Unknown set")}</p>
+          <div className={styles.regionalPrintings}>
+            {regionalPrintings.length > 0
+              ? regionalPrintings.map((printing) => (
+                <p key={printing.code}>
+                  <strong>{printing.code}</strong><span aria-hidden="true"> · </span>{regionalPrintingFacts(printing)}
+                </p>
+              ))
+              : <p>Regional printing unknown</p>}
+          </div>
           {view === "grid" ? (
             <div className={styles.startingPrice}>
               <span>{multiplePrices ? "From" : FORMAT_LABELS[format] === "Any format" ? "Price" : FORMAT_LABELS[format]}</span>

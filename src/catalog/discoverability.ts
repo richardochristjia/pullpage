@@ -1,4 +1,5 @@
 import { isHttpsProductPreview } from "./product-preview";
+import { catalogProductRegionalPrintings, regionalPrintingFacts } from "./regional-printing";
 
 export const PRODUCTION_ORIGIN = "https://pullpage.vercel.app";
 export const SOCIAL_FALLBACK_URL = `${PRODUCTION_ORIGIN}/pullpage-social.png`;
@@ -14,8 +15,10 @@ const idr = new Intl.NumberFormat("id-ID", {
 type DiscoverableCatalogProduct = {
   slug: string;
   cardName: string | null;
-  collectorNumber: string | null;
-  setName: string | null;
+  englishCollectorNumber: string | null;
+  japaneseCollectorNumber: string | null;
+  englishSetName: string | null;
+  japaneseSetName: string | null;
   rarity: { code: string } | null;
   designName: string | null;
   previewUrl: string | null;
@@ -60,9 +63,10 @@ export function productDiscoverability(product: DiscoverableCatalogProduct) {
   const unboundedTitle = designName ? `${cardName} — ${designName}` : cardName;
   const title = truncateAtWord(unboundedTitle, 65 - TITLE_SUFFIX.length);
 
-  const identityFacts: string[] = [];
-  if (product.collectorNumber) identityFacts.push(`Collector Number ${normalizeMetadataText(product.collectorNumber)}.`);
-  if (product.setName) identityFacts.push(`Set Name ${normalizeMetadataText(product.setName)}.`);
+  const regionalFact = catalogProductRegionalPrintings(product)
+    .map((printing) => `${printing.code} ${normalizeMetadataText(regionalPrintingFacts(printing))}`)
+    .join("; ");
+  const identityFacts = regionalFact ? [`${regionalFact}.`] : [];
   if (product.rarity) identityFacts.push(`Rarity ${normalizeMetadataText(product.rarity.code)}.`);
   const requiredFacts: string[] = [];
   const formats = product.formatOptions.map(({ format }) => format);

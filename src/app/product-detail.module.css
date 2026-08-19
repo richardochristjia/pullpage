@@ -50,11 +50,40 @@
   letter-spacing: -.05em;
 }
 .identityBadges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.regionalFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 34px 0 20px;
+}
+.regionalFacts section {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+}
+.regionalFacts h2,
+.regionalFacts h3 {
+  margin: 0 0 10px;
+  font-size: .82rem;
+  font-weight: 700;
+}
+.regionalFacts dl { display: grid; gap: 10px; margin: 0; }
+.regionalFacts dt {
+  color: var(--muted-foreground);
+  font-size: .65rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.regionalFacts dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: .9rem; }
+.regionalFacts > p { grid-column: 1 / -1; margin: 0; color: var(--muted-foreground); }
 .facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px 28px;
-  margin: 34px 0;
+  margin: 20px 0 34px;
 }
 .facts div { min-width: 0; }
 .facts dt {
@@ -131,7 +160,9 @@
   .detail { border-inline: 0; border-radius: 0; }
   .content { padding: 28px 20px 42px; }
   .modalDetail .content { padding-bottom: calc(42px + env(safe-area-inset-bottom)); }
-  .facts { grid-template-columns: 1fr; gap: 15px; }
+  .regionalFacts,
+  .facts { grid-template-columns: 1fr; }
+  .facts { gap: 15px; }
   .previewBlock { padding: 12px; }
   .fullImageButton { right: 20px; bottom: 20px; }
   .lightboxContent { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }

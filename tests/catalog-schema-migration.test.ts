@@ -7,6 +7,7 @@ const migrationPaths = [
   "20260730000000_simplify_catalog_source.sql",
   "20260803000000_canonicalize_product_preview_bucket_name.sql",
   "20260804000000_add_catalog_rarity_metadata.sql",
+  "20260805000000_add_regional_printing_facts.sql",
 ].map((migration) => join(process.cwd(), "supabase/migrations", migration));
 
 function relativeLuminance(hex: string) {
@@ -166,6 +167,7 @@ async function currentCatalogDatabase() {
       allowed_mime_types text[]
     );
     create table storage.objects (id bigint primary key, bucket_id text not null);
+    insert into storage.objects values (99, 'product-previews');
     alter table storage.objects enable row level security;
 
     insert into catalog_private.product_preview_rights values
@@ -182,17 +184,20 @@ async function currentCatalogDatabase() {
       binder_sleeve_price, toploader_price, product_preview_url,
       product_preview_rights_id, archived_at, created_at, updated_at
     ) values
-      ('11111111-1111-4111-8111-111111111111', 'binder-current-11111111',
+      ('d6b1bd71-9f13-4679-9448-9b7526fa0cce', 'binder-current-11111111',
        'Binder Current', '1/3', 'AR', 'BS', 95000, 999,
        'https://res.cloudinary.com/pullpage-tests/image/upload/v1/catalog-products/current.webp',
        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', null, '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z'),
-      ('22222222-2222-4222-8222-222222222222', 'toploader-inactive-22222222',
+      ('16ff2fd6-efe0-436c-86b5-66ca7508c46a', 'toploader-inactive-22222222',
        'Toploader Inactive', '2/3', 'SR', 'TL', 888, 125000,
        'https://res.cloudinary.com/pullpage-tests/image/upload/v1/catalog-products/rejected.webp',
        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '2026-01-03T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z'),
-      ('33333333-3333-4333-8333-333333333333', 'both-current-33333333',
+      ('344ae84e-03ce-4f4a-8f47-21366edbe1c3', 'both-current-33333333',
        'Both Current', '3/3', null, 'ALL', 100000, 130000,
-       null, null, null, '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z');
+       null, null, null, '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z'),
+      ('44444444-4444-4444-8444-444444444444', 'unrelated-future-row-44444444',
+       'Unrelated Future Row', '4/4', null, 'BS', 100000, null,
+       null, null, '2026-01-03T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z');
     alter table catalog_private.catalog_products enable trigger user;
   `);
   return db;
@@ -213,7 +218,7 @@ async function migratedCatalogDatabase() {
 }
 
 describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
-  test("preserves identity while mapping visibility, Format Options, and current previews", async () => {
+  test("deletes only the designated products while replacing singular printing facts", async () => {
     const database = await migratedCatalogDatabase();
 
     const columns = await database.query<{ column_name: string }>(`
@@ -222,51 +227,19 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
       order by ordinal_position
     `);
     expect(columns.rows.map(({ column_name }) => column_name)).toEqual([
-      "id", "slug", "card_name", "collector_number", "set_name", "rarity",
-      "design_name", "binder_sleeve_price", "toploader_price", "product_preview_url",
-      "created_at", "updated_at", "is_active",
+      "id", "slug", "card_name", "rarity", "design_name", "binder_sleeve_price",
+      "toploader_price", "product_preview_url", "created_at", "updated_at", "is_active",
+      "english_collector_number", "japanese_collector_number",
+      "english_set_name", "japanese_set_name",
     ]);
 
-    const products = await database.query(`
-      select id, slug, rarity, binder_sleeve_price, toploader_price,
-        product_preview_url, is_active, created_at, updated_at
-      from catalog_private.catalog_products order by collector_number
-    `);
-    expect(products.rows).toEqual([
-      {
-        id: "11111111-1111-4111-8111-111111111111",
-        slug: "binder-current-11111111",
-        rarity: "AR",
-        binder_sleeve_price: 95000,
-        toploader_price: null,
-        product_preview_url: "https://res.cloudinary.com/pullpage-tests/image/upload/v1/catalog-products/current.webp",
-        is_active: true,
-        created_at: new Date("2026-01-01T00:00:00.000Z"),
-        updated_at: new Date("2026-01-02T00:00:00.000Z"),
-      },
-      {
-        id: "22222222-2222-4222-8222-222222222222",
-        slug: "toploader-inactive-22222222",
-        rarity: "SR",
-        binder_sleeve_price: null,
-        toploader_price: 125000,
-        product_preview_url: null,
-        is_active: false,
-        created_at: new Date("2026-01-01T00:00:00.000Z"),
-        updated_at: new Date("2026-01-02T00:00:00.000Z"),
-      },
-      {
-        id: "33333333-3333-4333-8333-333333333333",
-        slug: "both-current-33333333",
-        rarity: null,
-        binder_sleeve_price: 100000,
-        toploader_price: 130000,
-        product_preview_url: null,
-        is_active: true,
-        created_at: new Date("2026-01-01T00:00:00.000Z"),
-        updated_at: new Date("2026-01-02T00:00:00.000Z"),
-      },
-    ]);
+    const products = await database.query("select id from catalog_private.catalog_products");
+    expect(products.rows).toEqual([{ id: "44444444-4444-4444-8444-444444444444" }]);
+
+    const rarities = await database.query("select code from catalog_private.catalog_rarities");
+    expect(rarities.rows).toHaveLength(21);
+    const previewObjects = await database.query("select id from storage.objects order by id");
+    expect(previewObjects.rows).toEqual([{ id: 99 }]);
   });
 
   test("seeds configured Rarity names, display order, and accessible badge colors", async () => {
@@ -336,7 +309,7 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
       is_active: boolean;
     }>(`
       insert into catalog_private.catalog_products
-        (card_name, collector_number, rarity, binder_sleeve_price)
+        (card_name, japanese_collector_number, rarity, binder_sleeve_price)
       values ('   ', 'new-row', ' ', 5000)
       returning id, slug, card_name, rarity, is_active
     `);
@@ -347,14 +320,23 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
       rarity: null,
       is_active: true,
     });
+
+    const englishPreferred = await database.query<{ slug: string }>(`
+      insert into catalog_private.catalog_products
+        (card_name, english_collector_number, japanese_collector_number, binder_sleeve_price)
+      values ('Preference', 'english-number', 'japanese-number', 5000)
+      returning slug
+    `);
+    expect(englishPreferred.rows[0].slug).toMatch(/^preference-english-number-[a-f0-9]{8}$/);
+
     await expect(database.exec(`
       update catalog_private.catalog_products
       set slug = 'caller-controlled' where id = '${inserted.rows[0].id}'
-    `)).rejects.toThrow(/slug immutable/);
+    `)).rejects.toThrow(/slug is immutable/i);
 
     await database.exec(`
       insert into catalog_private.catalog_products
-        (card_name, collector_number, binder_sleeve_price)
+        (card_name, english_collector_number, binder_sleeve_price)
       values
         ('Duplicate allowed', 'same', 1),
         ('Duplicate allowed', 'same', 1)
@@ -370,15 +352,18 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
   test("gives Prisma read-only access to active Catalog Products", async () => {
     const database = await migratedCatalogDatabase();
 
+    await database.exec(`
+      insert into catalog_private.catalog_products
+        (card_name, binder_sleeve_price, is_active)
+      values ('Visible', 1, true), ('Hidden', 1, false)
+    `);
+
     await database.exec("set role catalog_runtime");
     try {
-      const visible = await database.query<{ id: string }>(`
-        select id from catalog_private.catalog_products order by id
+      const visible = await database.query<{ card_name: string }>(`
+        select card_name from catalog_private.catalog_products order by card_name
       `);
-      expect(visible.rows).toEqual([
-        { id: "11111111-1111-4111-8111-111111111111" },
-        { id: "33333333-3333-4333-8333-333333333333" },
-      ]);
+      expect(visible.rows).toEqual([{ card_name: "Visible" }]);
       const rarities = await database.query<{ code: string }>(`
         select code from catalog_private.catalog_rarities order by display_order
       `);
@@ -462,7 +447,7 @@ describe("simplified Catalog schema migration", { timeout: 15_000 }, () => {
       const publicObjects = await database.query<{ id: number }>(`
         select id from storage.objects order by id
       `);
-      expect(publicObjects.rows).toEqual([{ id: 1 }]);
+      expect(publicObjects.rows).toEqual([{ id: 1 }, { id: 99 }]);
       await expect(database.exec(`
         insert into storage.objects (id, bucket_id) values (3, 'product-previews')
       `)).rejects.toThrow(/permission denied/);

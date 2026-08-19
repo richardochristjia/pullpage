@@ -18,7 +18,9 @@ describe("synthetic Catalog fixtures", () => {
     expect(first.products.some((product) => !product.binderSleevePrice && product.toploaderPrice)).toBe(true);
     expect(first.products.some((product) => !product.isActive)).toBe(true);
     expect(first.products.some((product) =>
-      product.cardName === null && product.collectorNumber === null && product.setName === null
+      product.cardName === null &&
+      product.englishCollectorNumber === null && product.japaneseCollectorNumber === null &&
+      product.englishSetName === null && product.japaneseSetName === null
     )).toBe(true);
     expect(first.products.some((product) => product.productPreviewUrl?.startsWith("https://"))).toBe(true);
   });

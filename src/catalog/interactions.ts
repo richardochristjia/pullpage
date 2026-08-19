@@ -129,8 +129,14 @@ export function applyCatalogView(
 
   const filtered = products.filter((product) => {
     const matchesSearch = !query ||
-      [product.cardName, product.collectorNumber, product.setName, product.designName]
-        .some((value) => value !== null && searchText(value).includes(query));
+      [
+        product.cardName,
+        product.englishCollectorNumber,
+        product.japaneseCollectorNumber,
+        product.englishSetName,
+        product.japaneseSetName,
+        product.designName,
+      ].some((value) => value !== null && searchText(value).includes(query));
     const matchesRarity = state.rarities.length === 0 || state.rarities.some((rarity) =>
       rarity === UNKNOWN_RARITY_FILTER ? product.rarity === null : product.rarity?.code === rarity,
     );
@@ -151,9 +157,12 @@ export function applyCatalogView(
   };
   const slug = (left: PublicCatalogProduct, right: PublicCatalogProduct) =>
     collator.compare(left.slug, right.slug);
+  const printingTie = (left: PublicCatalogProduct, right: PublicCatalogProduct) =>
+    text(left.englishCollectorNumber, right.englishCollectorNumber) ||
+    text(left.japaneseCollectorNumber, right.japaneseCollectorNumber);
   const cardTie = (left: PublicCatalogProduct, right: PublicCatalogProduct) =>
     text(left.cardName, right.cardName) ||
-    text(left.collectorNumber, right.collectorNumber) ||
+    printingTie(left, right) ||
     text(left.designName, right.designName) ||
     slug(left, right);
   const eligiblePrice = (product: PublicCatalogProduct) => catalogStartingPrice(product, state.format);
@@ -163,7 +172,7 @@ export function applyCatalogView(
       case "card-asc": return cardTie(left, right);
       case "card-desc":
         return text(left.cardName, right.cardName, -1) ||
-          text(left.collectorNumber, right.collectorNumber) ||
+          printingTie(left, right) ||
           text(left.designName, right.designName) ||
           slug(left, right);
       case "price-asc":

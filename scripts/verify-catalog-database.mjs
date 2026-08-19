@@ -50,9 +50,10 @@ try {
   `);
 
   const expectedColumns = [
-    "id", "slug", "card_name", "collector_number", "set_name", "rarity",
-    "design_name", "binder_sleeve_price", "toploader_price", "product_preview_url",
-    "created_at", "updated_at", "is_active",
+    "id", "slug", "card_name", "rarity", "design_name", "binder_sleeve_price",
+    "toploader_price", "product_preview_url", "created_at", "updated_at", "is_active",
+    "english_collector_number", "japanese_collector_number",
+    "english_set_name", "japanese_set_name",
   ];
   const expectedTables = [{ table_name: "catalog_products" }, { table_name: "catalog_rarities" }];
   if (JSON.stringify(tables.rows) !== JSON.stringify(expectedTables) ||

@@ -27,16 +27,71 @@ const client = await pool.connect();
 try {
   await client.query("begin");
   await client.query("set local lock_timeout = '5s'; set local statement_timeout = '60s'");
-  const schema = await client.query<{ simplified: boolean }>(`
-    select exists (
-      select 1 from information_schema.columns
-      where table_schema = 'catalog_private'
-        and table_name = 'catalog_products'
-        and column_name = 'is_active'
-    ) simplified
+  const schema = await client.query<{ simplified: boolean; regionalized: boolean }>(`
+    select
+      exists (
+        select 1 from information_schema.columns
+        where table_schema = 'catalog_private'
+          and table_name = 'catalog_products'
+          and column_name = 'is_active'
+      ) simplified,
+      exists (
+        select 1 from information_schema.columns
+        where table_schema = 'catalog_private'
+          and table_name = 'catalog_products'
+          and column_name = 'english_collector_number'
+      ) regionalized
   `);
 
-  if (schema.rows[0].simplified) {
+  if (schema.rows[0].regionalized) {
+    const columnsPerProduct = 13;
+    const values: unknown[] = [];
+    const tuples = fixtures.products.map((product, productIndex) => {
+      const base = productIndex * columnsPerProduct;
+      values.push(
+        product.id,
+        "",
+        product.cardName,
+        product.englishCollectorNumber,
+        product.japaneseCollectorNumber,
+        product.englishSetName,
+        product.japaneseSetName,
+        product.rarity,
+        product.designName,
+        product.binderSleevePrice,
+        product.toploaderPrice,
+        product.productPreviewUrl,
+        product.isActive,
+      );
+      return `(${Array.from({ length: columnsPerProduct }, (_, column) => `$${base + column + 1}`).join(",")})`;
+    });
+    await client.query(`
+      insert into catalog_private.catalog_products (
+        id, slug, card_name, english_collector_number, japanese_collector_number,
+        english_set_name, japanese_set_name, rarity, design_name,
+        binder_sleeve_price, toploader_price, product_preview_url, is_active
+      ) values ${tuples.join(",")}
+      on conflict (id) do update set
+        card_name=excluded.card_name,
+        english_collector_number=excluded.english_collector_number,
+        japanese_collector_number=excluded.japanese_collector_number,
+        english_set_name=excluded.english_set_name,
+        japanese_set_name=excluded.japanese_set_name,
+        rarity=excluded.rarity, design_name=excluded.design_name,
+        binder_sleeve_price=excluded.binder_sleeve_price,
+        toploader_price=excluded.toploader_price,
+        product_preview_url=excluded.product_preview_url, is_active=excluded.is_active
+      where (catalog_products.card_name, catalog_products.english_collector_number,
+        catalog_products.japanese_collector_number, catalog_products.english_set_name,
+        catalog_products.japanese_set_name, catalog_products.rarity, catalog_products.design_name,
+        catalog_products.binder_sleeve_price, catalog_products.toploader_price,
+        catalog_products.product_preview_url, catalog_products.is_active)
+      is distinct from (excluded.card_name, excluded.english_collector_number,
+        excluded.japanese_collector_number, excluded.english_set_name, excluded.japanese_set_name,
+        excluded.rarity, excluded.design_name, excluded.binder_sleeve_price,
+        excluded.toploader_price, excluded.product_preview_url, excluded.is_active)
+    `, values);
+  } else if (schema.rows[0].simplified) {
     const columnsPerProduct = 11;
     const values: unknown[] = [];
     const tuples = fixtures.products.map((product, productIndex) => {
@@ -45,8 +100,8 @@ try {
         product.id,
         "",
         product.cardName,
-        product.collectorNumber,
-        product.setName,
+        product.englishCollectorNumber,
+        product.englishSetName,
         product.rarity,
         product.designName,
         product.binderSleevePrice,
@@ -113,7 +168,7 @@ try {
   const values: unknown[] = [];
   const tuples = fixtures.products.map((product, productIndex) => {
     const base = productIndex * columnsPerProduct;
-    values.push(product.id, "", product.cardName, product.collectorNumber, product.setName, product.rarity,
+    values.push(product.id, "", product.cardName, product.englishCollectorNumber, product.englishSetName, product.rarity,
       product.designName, legacyFormat(product), product.binderSleevePrice, product.toploaderPrice,
       product.productPreviewUrl, product.productPreviewUrl ? legacyPreviewRights.id : null,
       product.isActive ? null : "2026-01-01T00:00:00.000Z");

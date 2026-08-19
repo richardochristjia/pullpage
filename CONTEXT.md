@@ -5,20 +5,28 @@ The language used to describe the business's static catalog of extended-art prod
 ## Language
 
 **Catalog Product**:
-One sellable extended-art design made for one specific Pokémon card depiction, regardless of how many physical copies exist. Its set may be unidentified.
-_Avoid_: Listing, stock item
+One sellable extended-art design made for one specific Pokémon card illustration, regardless of how many physical copies or supported regional printings exist. English and Japanese printing facts may share a Catalog Product only when the same extended-art design fits both; a materially different illustration requires a separate Catalog Product.
+_Avoid_: Listing, stock item, separate product per regional printing
 
 **Card Name**:
 The optional customer-facing name for the depicted card, displayed exactly as supplied rather than constrained to an official Pokémon naming source. A missing or blank value is presented as `No Name`.
 _Avoid_: Pokémon species field, normalized official name
 
-**Collector Number**:
-The optional identifying number printed on the Pokémon card, such as `203/165`; a missing value is presented as `Unknown number`.
-_Avoid_: Card code, set code
+**English Collector Number**:
+The optional identifying number printed on the English Pokémon card, such as `203/165`. It is independent of both the Japanese Collector Number and whether an English Set Name is known; a missing value means unknown or unrecorded.
+_Avoid_: Shared collector number, card code, set code
 
-**Set Name**:
-The official Pokémon expansion containing the depicted card when it can be identified; it may be unknown.
-_Avoid_: Assuming Collector Number is globally unique
+**Japanese Collector Number**:
+The optional identifying number printed on the Japanese Pokémon card. It is independent of both the English Collector Number and whether a Japanese Set Name is known; a missing value means unknown or unrecorded.
+_Avoid_: Shared collector number, card code, set code
+
+**English Set Name**:
+The optional official English Pokémon expansion containing the depicted card. It is independent of both the Japanese Set Name and whether an English Collector Number is known; a missing value means unknown or unrecorded.
+_Avoid_: English translation, English set
+
+**Japanese Set Name**:
+The optional official Japanese Pokémon expansion containing the depicted card. It is independent of both the English Set Name and whether a Japanese Collector Number is known; a missing value means unknown or unrecorded.
+_Avoid_: Japanese translation, Japanese set
 
 **Rarity**:
 The optional configured Pokémon card classification, identified by a stable code and carrying a customer-facing name, display order, badge colors, and filter visibility. A known card without a rarity symbol is `No mark`, while a missing classification is presented as `Unknown rarity`; display order is not a universal rank across Pokémon eras.

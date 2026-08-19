@@ -1,8 +1,10 @@
 export type SyntheticCatalogProduct = {
   id: string;
   cardName: string | null;
-  collectorNumber: string | null;
-  setName: string | null;
+  englishCollectorNumber: string | null;
+  japaneseCollectorNumber: string | null;
+  englishSetName: string | null;
+  japaneseSetName: string | null;
   rarity: string | null;
   designName: string | null;
   binderSleevePrice: number | null;
@@ -23,8 +25,10 @@ export function buildSyntheticCatalogFixtures() {
   const pikachu: SyntheticCatalogProduct = {
     id: "11111111-1111-4111-8111-111111111111",
     cardName: "Pikachu",
-    collectorNumber: "173/165",
-    setName: "Scarlet & Violet—151",
+    englishCollectorNumber: "173/165",
+    japaneseCollectorNumber: "205/165",
+    englishSetName: "Scarlet & Violet—151",
+    japaneseSetName: "Pokémon Card 151",
     rarity: "AR",
     designName: "Electric Bloom",
     binderSleevePrice: 95_000,
@@ -40,8 +44,10 @@ export function buildSyntheticCatalogFixtures() {
     return {
       id: syntheticUuid(n),
       cardName: missingFacts ? null : duplicate ? "Synthetic Twin" : n === 1 ? "  Exact  Spacing  " : `Catalog Test ${String(n).padStart(3, "0")}`,
-      collectorNumber: missingFacts ? null : duplicate ? "DUP-001" : `synthetic-browser-${n}`,
-      setName: missingFacts || n % 10 === 0 ? null : duplicate ? "Synthetic Set" : `Synthetic Set ${n % 5}`,
+      englishCollectorNumber: missingFacts ? null : duplicate ? "DUP-001" : `synthetic-browser-${n}`,
+      japaneseCollectorNumber: missingFacts ? null : duplicate ? "JP-DUP-001" : `jp-synthetic-${n}`,
+      englishSetName: missingFacts || n % 10 === 0 ? null : duplicate ? "Synthetic Set" : `Synthetic Set ${n % 5}`,
+      japaneseSetName: missingFacts ? null : duplicate ? "Japanese Synthetic Set" : `Japanese Synthetic Set ${n % 5}`,
       rarity: missingFacts || n % 11 === 0 ? null : rarities[n % rarities.length],
       designName: duplicate ? (n === 497 ? "Synthetic Dawn" : "Synthetic Dusk") : fixtureDesign,
       binderSleevePrice: format === "Toploader" ? null : 50_000 + n,
@@ -53,8 +59,10 @@ export function buildSyntheticCatalogFixtures() {
   const inactive: SyntheticCatalogProduct = {
     id: syntheticUuid(500),
     cardName: "Inactive Browser Fixture",
-    collectorNumber: "synthetic-browser-inactive",
-    setName: null,
+    englishCollectorNumber: "synthetic-browser-inactive",
+    japaneseCollectorNumber: null,
+    englishSetName: null,
+    japaneseSetName: null,
     rarity: null,
     designName: fixtureDesign,
     binderSleevePrice: 50_000,

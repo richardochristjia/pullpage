@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import { productDiscoverability } from "@/catalog/discoverability";
 import { displayCatalogValue } from "@/catalog/presentation";
-import { Badge } from "@/components/ui/badge";
+import { catalogProductRegionalPrintings } from "@/catalog/regional-printing";
 import { ModalBackToCatalog } from "./modal-back-to-catalog";
 import { ProductPreviewLightbox } from "./product-preview-lightbox";
 import { ShareProduct } from "./share-product";
@@ -28,6 +28,8 @@ export function ProductDetail({ product, headingId, modal = false }: {
 }) {
   const Heading = modal ? "h2" : "h1";
   const discoverability = productDiscoverability(product);
+  const regionalPrintings = catalogProductRegionalPrintings(product);
+  const RegionHeading = modal ? "h3" : "h2";
   const previewAlt = `Finished Product Preview for ${productHeading(product)}`;
 
   return (
@@ -38,11 +40,23 @@ export function ProductDetail({ product, headingId, modal = false }: {
         <Heading id={headingId}>{productHeading(product)}</Heading>
         <div className={styles.identityBadges}>
           <RarityBadge rarity={product.rarity} />
-          <Badge variant="outline">{displayCatalogValue(product.collectorNumber, "Unknown number")}</Badge>
+        </div>
+        <div className={styles.regionalFacts}>
+          {regionalPrintings.length > 0
+            ? regionalPrintings.map((printing) => (
+              <section key={printing.code}>
+                <RegionHeading>{printing.label}</RegionHeading>
+                <dl>
+                  {printing.collectorNumber && (
+                    <div><dt>Collector Number</dt><dd>{printing.collectorNumber}</dd></div>
+                  )}
+                  {printing.setName && <div><dt>Set Name</dt><dd>{printing.setName}</dd></div>}
+                </dl>
+              </section>
+            ))
+            : <p>Regional printing unknown</p>}
         </div>
         <dl className={styles.facts}>
-          <div><dt>Set Name</dt><dd>{displayCatalogValue(product.setName, "Unknown set")}</dd></div>
-          <div><dt>Collector Number</dt><dd>{displayCatalogValue(product.collectorNumber, "Unknown number")}</dd></div>
           <div><dt>Rarity</dt><dd>{product.rarity === null ? "Unknown rarity" : rarityDescription(product.rarity)}</dd></div>
           {product.designName && <div><dt>Design Name</dt><dd>{product.designName}</dd></div>}
         </dl>

@@ -258,14 +258,17 @@
   letter-spacing: -.025em;
 }
 .designName { margin: 4px 0 0; color: var(--brand-cyan); font-size: .9rem; font-weight: 650; }
-.cardMeta {
-  margin: 9px 0 0;
+.regionalPrintings {
+  display: grid;
+  gap: 2px;
+  margin-top: 9px;
   overflow: hidden;
   color: var(--muted-foreground);
   font-size: .78rem;
   line-height: 1.45;
-  text-overflow: ellipsis;
 }
+.regionalPrintings p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.regionalPrintings strong { color: var(--foreground); font-size: .7rem; letter-spacing: .04em; }
 .startingPrice { display: grid; gap: 2px; margin-top: 18px; }
 .startingPrice span { color: var(--muted-foreground); font-size: .69rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .startingPrice strong { color: var(--foreground); font-size: 1.08rem; }
@@ -279,7 +282,7 @@
 .productRow .productBadges,
 .productRow h3,
 .productRow .designName,
-.productRow .cardMeta { grid-column: 1; }
+.productRow .regionalPrintings { grid-column: 1; }
 .rowPrices {
   grid-column: 2;
   grid-row: 1 / span 5;
@@ -355,7 +358,8 @@
   .productBadges { gap: 4px; }
   .productBadges > span { padding-inline: 7px; font-size: .64rem; }
   .productBadges > span:nth-child(n+3) { display: none; }
-  .cardMeta { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; }
+  .regionalPrintings { max-height: 2.9em; }
+  .regionalPrintings p { white-space: normal; }
   .startingPrice { margin-top: 13px; }
   .startingPrice strong { font-size: .95rem; }
   .preview { padding: 10px; }

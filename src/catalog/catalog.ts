@@ -56,8 +56,10 @@ async function queryActiveCatalogProducts(databaseUrl: string): Promise<CatalogP
     select: {
       slug: true,
       cardName: true,
-      collectorNumber: true,
-      setName: true,
+      englishCollectorNumber: true,
+      japaneseCollectorNumber: true,
+      englishSetName: true,
+      japaneseSetName: true,
       rarityDefinition: {
         select: {
           code: true,

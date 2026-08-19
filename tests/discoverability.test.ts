@@ -12,8 +12,10 @@ import {
 const product = {
   slug: "pikachu-173-165-electric-bloom-a1b2c3d4",
   cardName: "  Pikachu  ",
-  collectorNumber: "173/165",
-  setName: "Scarlet & Violet—151",
+  englishCollectorNumber: "173/165",
+  japaneseCollectorNumber: "205/165",
+  englishSetName: "Scarlet & Violet—151",
+  japaneseSetName: "Pokémon Card 151",
   rarity: { code: "SAR" },
   designName: " Electric   Bloom ",
   previewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000001/catalog-products/pikachu/electric-bloom.png",
@@ -37,15 +39,17 @@ describe("discoverability policy seam", () => {
       canonical: "https://pullpage.vercel.app/products/pikachu-173-165-electric-bloom-a1b2c3d4",
       title: "Pikachu — Electric Bloom",
       documentTitle: "Pikachu — Electric Bloom | Pullpage",
-      description: "Pullpage extended card art. Collector Number 173/165. Set Name Scarlet & Violet—151. Rarity SAR. Formats Binder Sleeve and Toploader. Lowest price Rp 95.000.",
+      description: "Pullpage extended card art. EN 173/165 · Scarlet & Violet—151; JP 205/165 · Pokémon Card 151. Formats Binder Sleeve and Toploader. Lowest price Rp 95.000.",
       socialImage: "https://res.cloudinary.com/pullpage-tests/image/upload/f_jpg,q_auto,c_pad,w_1200,h_630,b_rgb:08111f/v1700000001/catalog-products/pikachu/electric-bloom.png",
     });
 
     const sparse = productDiscoverability({
       ...product,
       cardName: null,
-      collectorNumber: null,
-      setName: null,
+      englishCollectorNumber: null,
+      japaneseCollectorNumber: null,
+      englishSetName: null,
+      japaneseSetName: null,
       rarity: null,
       designName: "  Aurora   Frame ",
       previewUrl: null,
@@ -62,14 +66,30 @@ describe("discoverability policy seam", () => {
       ...product,
       cardName: "Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu",
       designName: "One Two Three Four Five",
-      collectorNumber: "A collector number that must not be sliced in the middle of a word",
-      setName: "A set name with many words that pushes the generated description past its limit",
+      englishCollectorNumber: "A collector number that must not be sliced in the middle of a word",
+      japaneseCollectorNumber: "A Japanese collector number that is also very long",
+      englishSetName: "An English set name with many words that pushes the generated description past its limit",
+      japaneseSetName: "A Japanese set name that also pushes the description past its limit",
     });
     expect(bounded.documentTitle.length).toBeLessThanOrEqual(65);
     expect(bounded.description.length).toBeLessThanOrEqual(160);
     expect(bounded.description).toContain("Formats Binder Sleeve and Toploader. Lowest price Rp 95.000.");
     expect(bounded.documentTitle).toBe("Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota | Pullpage");
     expect(bounded.description.endsWith(".")).toBe(true);
+
+    const bothRegions = productDiscoverability({
+      ...product,
+      englishCollectorNumber: "001",
+      japaneseCollectorNumber: "002",
+      englishSetName: "EN Set",
+      japaneseSetName: "JP Set",
+      rarity: null,
+      formatOptions: [{ format: "Toploader", price: 80_000 }],
+    });
+    expect(bothRegions.description).toContain("EN 001 · EN Set; JP 002 · JP Set.");
+    expect(bothRegions.description.indexOf("EN 001")).toBeLessThan(
+      bothRegions.description.indexOf("JP 002"),
+    );
   });
 
   test("uses Cloudinary and Supabase Storage Product Previews for social imagery", () => {

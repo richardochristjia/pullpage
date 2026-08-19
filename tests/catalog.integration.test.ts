@@ -29,11 +29,13 @@ integration("disposable local Catalog database seam", () => {
     const products = await listActiveCatalogProducts({ databaseUrl });
 
     expect(products).toHaveLength(480);
-    expect(products.find(({ collectorNumber }) => collectorNumber === "173/165")).toEqual({
+    expect(products.find(({ englishCollectorNumber }) => englishCollectorNumber === "173/165")).toEqual({
       slug: expect.stringMatching(/^pikachu-173-165-electric-bloom-[a-f0-9]{8}$/),
       cardName: "Pikachu",
-      collectorNumber: "173/165",
-      setName: "Scarlet & Violet—151",
+      englishCollectorNumber: "173/165",
+      japaneseCollectorNumber: "205/165",
+      englishSetName: "Scarlet & Violet—151",
+      japaneseSetName: "Pokémon Card 151",
       rarity: {
         code: "AR",
         displayName: "Art Rare",
@@ -46,7 +48,7 @@ integration("disposable local Catalog database seam", () => {
       previewUrl: null,
       formatOptions: [{ format: "Binder Sleeve", price: 95_000 }],
     });
-    expect(products.find(({ collectorNumber }) => collectorNumber === "synthetic-browser-2")).toMatchObject({
+    expect(products.find(({ englishCollectorNumber }) => englishCollectorNumber === "synthetic-browser-2")).toMatchObject({
       rarity: {
         code: "R",
         displayName: "Rare",
@@ -60,10 +62,14 @@ integration("disposable local Catalog database seam", () => {
         { format: "Toploader", price: 70_002 },
       ],
     });
-    expect(products.find(({ cardName, collectorNumber }) => cardName === null && collectorNumber === null)).toMatchObject({
+    expect(products.find(({ cardName, englishCollectorNumber, japaneseCollectorNumber }) =>
+      cardName === null && englishCollectorNumber === null && japaneseCollectorNumber === null
+    )).toMatchObject({
       cardName: null,
-      collectorNumber: null,
-      setName: null,
+      englishCollectorNumber: null,
+      japaneseCollectorNumber: null,
+      englishSetName: null,
+      japaneseSetName: null,
       rarity: null,
       formatOptions: [{ format: "Toploader", price: 70_499 }],
     });
@@ -89,7 +95,7 @@ integration("disposable local Catalog database seam", () => {
       const rarities = await listCatalogRarityFilterOptions({ databaseUrl });
       expect(rarities.some(({ code }) => code === "AR")).toBe(false);
       const products = await listActiveCatalogProducts({ databaseUrl });
-      expect(products.find(({ collectorNumber }) => collectorNumber === "173/165")?.rarity).toMatchObject({
+      expect(products.find(({ englishCollectorNumber }) => englishCollectorNumber === "173/165")?.rarity).toMatchObject({
         code: "AR",
         isActive: false,
       });
@@ -146,7 +152,7 @@ integration("disposable local Catalog database seam", () => {
         is_active: boolean;
       }>(`
         insert into catalog_private.catalog_products
-          (card_name, collector_number, rarity, binder_sleeve_price, toploader_price)
+          (card_name, japanese_collector_number, rarity, binder_sleeve_price, toploader_price)
         values ('   ', 'integration-current', ' ', 90000, 120000)
         returning id, slug, card_name, rarity, is_active
       `);
