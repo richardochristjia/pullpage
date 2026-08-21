@@ -55,3 +55,7 @@ _Avoid_: Raw artwork, card image
 **Catalog Visibility**:
 A Catalog Product’s explicit inclusion state: active products are public, while inactive products remain recorded but are absent from every public Catalog surface. It is not stock, sales availability, approval, or archival state.
 _Avoid_: Publication workflow, inventory status, archive status
+
+**Business Contact Channel**:
+The outbound messaging destination through which a customer can request a Catalog Product. A Pullpage catalog exposes at most one channel; the same channel applies to every Catalog Product, and the channel is a business contact, not a personal contact. A catalog without a configured channel offers no order path beyond the displayed prices.
+_Avoid_: WhatsApp number, sales phone, admin number, personal contact, contact form

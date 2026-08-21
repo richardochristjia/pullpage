@@ -4,6 +4,8 @@ import type { PublicCatalogProduct } from "@/catalog/catalog";
 import { productDiscoverability } from "@/catalog/discoverability";
 import { displayCatalogValue } from "@/catalog/presentation";
 import { catalogProductRegionalPrintings } from "@/catalog/regional-printing";
+import { buildWhatsAppOrderLink } from "@/lib/whatsapp";
+import { getWhatsAppNumber } from "@/lib/whatsapp-config";
 import { ModalBackToCatalog } from "./modal-back-to-catalog";
 import { ProductPreviewLightbox } from "./product-preview-lightbox";
 import { ShareProduct } from "./share-product";
@@ -31,6 +33,14 @@ export function ProductDetail({ product, headingId, modal = false }: {
   const regionalPrintings = catalogProductRegionalPrintings(product);
   const RegionHeading = modal ? "h3" : "h2";
   const previewAlt = `Finished Product Preview for ${productHeading(product)}`;
+  const whatsAppNumber = getWhatsAppNumber();
+  const whatsAppLink = whatsAppNumber
+    ? buildWhatsAppOrderLink({
+        product,
+        canonicalUrl: discoverability.canonical,
+        whatsAppNumber,
+      })
+    : undefined;
 
   return (
     <article className={`${styles.detail} ${modal ? styles.modalDetail : ""}`}>
@@ -68,7 +78,7 @@ export function ProductDetail({ product, headingId, modal = false }: {
             ))}
           </div>
         </section>
-        <ShareProduct canonical={discoverability.canonical} title={discoverability.documentTitle} />
+        <ShareProduct canonical={discoverability.canonical} whatsAppUrl={whatsAppLink?.url} />
         {modal
           ? <ModalBackToCatalog />
           : <Link className={styles.shelfLink} href="/"><ArrowLeft aria-hidden="true" /> Back to the Catalog</Link>}

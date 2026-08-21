@@ -4,7 +4,7 @@ A server-rendered Catalog of Pullpage extended-art products backed by Supabase P
 
 ## Runtime configuration
 
-The application needs one server-only environment variable:
+The application needs one server-only environment variable for the Catalog:
 
 ```dotenv
 CATALOG_DATABASE_URL="postgresql://catalog_runtime.<project-ref>:<password>@<session-pooler-host>:5432/postgres?sslmode=require"
@@ -13,6 +13,14 @@ CATALOG_DATABASE_URL="postgresql://catalog_runtime.<project-ref>:<password>@<ses
 Use the Supabase **Session pooler** connection for the dedicated `catalog_runtime` role. The role has `SELECT` only, and row-level security exposes only rows whose `is_active` value is true.
 
 Set only `CATALOG_DATABASE_URL` in the Vercel Production and Preview scopes. Never expose it through a `NEXT_PUBLIC_` variable or browser code. A production build deliberately succeeds without this variable; database access starts when a request renders a Catalog route.
+
+The application also reads one public environment variable for the optional WhatsApp sales CTA on the Catalog Product detail dialog:
+
+```dotenv
+NEXT_PUBLIC_WHATSAPP_NUMBER="6281234567890"
+```
+
+Format: digits only, no `+`, no spaces, no separators (international dialing form). When unset, the `Order via WhatsApp` button is not rendered and a single boot-time warning is logged in production. The number is treated as a non-secret business contact channel — it appears in the catalog markup and is therefore visible to crawlers.
 
 For local application development, save the same read-only value in the ignored `.env.local`, then run:
 

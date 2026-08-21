@@ -1,30 +1,18 @@
 "use client";
 
-import { Copy, Share2 } from "lucide-react";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { Copy } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import styles from "./product-detail.module.css";
 
-export function ShareProduct({ canonical, title }: { canonical: string; title: string }) {
-  const canShare = useSyncExternalStore(
-    () => () => {},
-    () => typeof navigator.share === "function",
-    () => false,
-  );
+export function ShareProduct({ canonical, whatsAppUrl }: {
+  canonical: string;
+  whatsAppUrl?: string;
+}) {
   const [showFallback, setShowFallback] = useState(false);
   const fallback = useRef<HTMLInputElement>(null);
-
-  async function share() {
-    try {
-      await navigator.share({ title, url: canonical });
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        toast.error("Sharing is unavailable. Try copying the link instead.");
-      }
-    }
-  }
 
   async function copy() {
     setShowFallback(false);
@@ -44,13 +32,32 @@ export function ShareProduct({ canonical, title }: { canonical: string; title: s
   return (
     <div className={styles.share}>
       <div className={styles.shareActions}>
-        {canShare && <Button type="button" onClick={share}><Share2 aria-hidden="true" /> Share</Button>}
-        <Button type="button" variant="outline" onClick={copy}><Copy aria-hidden="true" /> Copy link</Button>
+        {whatsAppUrl && (
+          <Button asChild>
+            <a
+              href={whatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Order via WhatsApp"
+            >
+              Order via WhatsApp
+            </a>
+          </Button>
+        )}
+        <Button type="button" variant="outline" onClick={copy}>
+          <Copy aria-hidden="true" /> Copy link
+        </Button>
       </div>
       {showFallback && (
         <label className={styles.shareFallback}>
           <span>Copy the canonical link manually</span>
-          <Input ref={fallback} aria-label="Canonical product link" readOnly value={canonical} onFocus={(event) => event.currentTarget.select()} />
+          <Input
+            ref={fallback}
+            aria-label="Canonical product link"
+            readOnly
+            value={canonical}
+            onFocus={(event) => event.currentTarget.select()}
+          />
         </label>
       )}
     </div>
