@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import styles from "./product-detail.module.css";
 
-export function ShareProduct({ canonical, whatsAppUrl }: {
+export function ShareProduct({ canonical, children }: {
   canonical: string;
-  whatsAppUrl?: string;
+  children?: React.ReactNode;
 }) {
   const [showFallback, setShowFallback] = useState(false);
   const fallback = useRef<HTMLInputElement>(null);
@@ -32,18 +32,7 @@ export function ShareProduct({ canonical, whatsAppUrl }: {
   return (
     <div className={styles.share}>
       <div className={styles.shareActions}>
-        {whatsAppUrl && (
-          <Button asChild>
-            <a
-              href={whatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Order via WhatsApp"
-            >
-              Order via WhatsApp
-            </a>
-          </Button>
-        )}
+        {children}
         <Button type="button" variant="outline" onClick={copy}>
           <Copy aria-hidden="true" /> Copy link
         </Button>

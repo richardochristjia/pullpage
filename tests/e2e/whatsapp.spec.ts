@@ -7,15 +7,12 @@ test.describe("WhatsApp sales CTA on Catalog Product detail", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/");
     const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
-    await search.fill("aggron");
-    const aggron = page.getByRole("link", { name: /Aggron — Regional printing unknown — 5ban Graphics/ });
-    await expect(aggron).toBeVisible();
-    await aggron.click();
+    await search.fill("pikachu");
+    const pikachu = page.getByRole("link", { name: /Pikachu.*English Printing 173\/165.*Japanese Printing 205\/165.*Electric Bloom/ });
+    await expect(pikachu).toBeVisible();
+    await pikachu.click();
 
-    const dialog = page.getByRole("dialog");
-    const heading = (await dialog.getByRole("heading", { level: 2 }).first().textContent())?.trim();
-    expect(heading).toBeTruthy();
-
+    const dialog = page.getByRole("dialog", { name: "Pikachu — Electric Bloom" });
     const cta = dialog.getByRole("link", { name: "Order via WhatsApp" });
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("target", "_blank");
@@ -28,14 +25,10 @@ test.describe("WhatsApp sales CTA on Catalog Product detail", () => {
     const text = url.searchParams.get("text");
     expect(text).not.toBeNull();
     const lines = text!.split("\n");
-    expect(lines[0]).toBe(`Hi Kak! I'd like to order ${heading}`);
-    expect(lines.at(-1)).toMatch(/^https:\/\/pullpage\.vercel\.app\/products\//);
-
-    const bodyFormatLines = lines.slice(1, -1);
-    expect(bodyFormatLines.length).toBeGreaterThan(0);
-    for (const line of bodyFormatLines) {
-      expect(line).toMatch(/^(Binder Sleeve|Toploader): Rp[\s ]?[\d.]+$/);
-    }
+    expect(lines[0]).toBe("Hi Kak! I'd like to order Pikachu — Electric Bloom");
+    expect(lines.at(-1)).toMatch(/^https:\/\/pullpage\.vercel\.app\/products\/pikachu/);
+    expect(text).toMatch(/Binder Sleeve: Rp[\s ]?95\.000/);
+    expect(text).not.toContain("Toploader");
   });
 
   test("keeps the Copy link button alongside the WhatsApp CTA inside the share section", async ({ page, context }) => {
@@ -44,11 +37,11 @@ test.describe("WhatsApp sales CTA on Catalog Product detail", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/");
     const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
-    await search.fill("aggron");
-    const aggron = page.getByRole("link", { name: /Aggron — Regional printing unknown — 5ban Graphics/ });
-    await aggron.click();
+    await search.fill("pikachu");
+    const pikachu = page.getByRole("link", { name: /Pikachu.*English Printing 173\/165.*Japanese Printing 205\/165.*Electric Bloom/ });
+    await pikachu.click();
 
-    const dialog = page.getByRole("dialog");
+    const dialog = page.getByRole("dialog", { name: "Pikachu — Electric Bloom" });
     await expect(dialog.getByRole("button", { name: "Copy link" })).toBeVisible();
     await expect(dialog.getByRole("link", { name: "Order via WhatsApp" })).toBeVisible();
   });
@@ -58,11 +51,11 @@ test.describe("WhatsApp sales CTA on Catalog Product detail", () => {
 
     await page.goto("/");
     const search = page.getByRole("searchbox", { name: "Search Catalog Products" });
-    await search.fill("aggron");
-    const aggron = page.getByRole("link", { name: /Aggron — Regional printing unknown — 5ban Graphics/ });
-    await aggron.click();
+    await search.fill("pikachu");
+    const pikachu = page.getByRole("link", { name: /Pikachu.*English Printing 173\/165.*Japanese Printing 205\/165.*Electric Bloom/ });
+    await pikachu.click();
 
-    const dialog = page.getByRole("dialog");
+    const dialog = page.getByRole("dialog", { name: "Pikachu — Electric Bloom" });
     await expect(dialog.getByRole("button", { name: "Share" })).toHaveCount(0);
   });
 });

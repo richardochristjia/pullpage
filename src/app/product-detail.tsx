@@ -9,6 +9,7 @@ import { getWhatsAppNumber } from "@/lib/whatsapp-config";
 import { ModalBackToCatalog } from "./modal-back-to-catalog";
 import { ProductPreviewLightbox } from "./product-preview-lightbox";
 import { ShareProduct } from "./share-product";
+import { WhatsAppOrderCta } from "./whatsapp-order-cta";
 import styles from "./product-detail.module.css";
 import { RarityBadge, rarityDescription } from "./rarity-badge";
 
@@ -78,7 +79,9 @@ export function ProductDetail({ product, headingId, modal = false }: {
             ))}
           </div>
         </section>
-        <ShareProduct canonical={discoverability.canonical} whatsAppUrl={whatsAppLink?.url} />
+        <ShareProduct canonical={discoverability.canonical}>
+          <WhatsAppOrderCta url={whatsAppLink?.url} />
+        </ShareProduct>
         {modal
           ? <ModalBackToCatalog />
           : <Link className={styles.shelfLink} href="/"><ArrowLeft aria-hidden="true" /> Back to the Catalog</Link>}
