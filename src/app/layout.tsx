@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Outfit, Work_Sans } from "next/font/google";
 import { catalogCanonical, indexingPolicy, PRODUCTION_ORIGIN, SOCIAL_FALLBACK_URL } from "@/catalog/discoverability";
@@ -65,6 +66,7 @@ export default function RootLayout({
             <Toaster position="bottom-center" />
           </TooltipProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
