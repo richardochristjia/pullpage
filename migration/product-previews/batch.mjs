@@ -13,7 +13,7 @@ const PNG = Buffer.from('89504e470d0a1a0a', 'hex');
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const fail = () => { throw new Error('Migration input or verification guard failed'); };
 
-export function parseCsv(text) {
+export function parseCsv(text, columns = COLUMNS) {
   text = text.replace(/^\uFEFF/, '');
   const rows = []; let row = [], cell = '', quoted = false, closed = false;
   for (let i = 0; i < text.length; i++) {
@@ -34,10 +34,10 @@ export function parseCsv(text) {
   }
   if (quoted) fail();
   if (cell || closed || row.length) { row.push(cell); rows.push(row); }
-  if (!rows.length || rows.shift().join('\0') !== COLUMNS.join('\0')) fail();
+  if (!rows.length || rows.shift().join('\0') !== columns.join('\0')) fail();
   return rows.map(values => {
-    if (values.length !== COLUMNS.length) fail();
-    return Object.fromEntries(COLUMNS.map((key, i) => [key, values[i]]));
+    if (values.length !== columns.length) fail();
+    return Object.fromEntries(columns.map((key, i) => [key, values[i]]));
   });
 }
 

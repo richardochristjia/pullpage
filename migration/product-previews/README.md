@@ -82,6 +82,36 @@ Verified mapping has ID, unchanged slug, exact expected old URL/updated_at, new 
 
 Preserve old mapping/files. Rehearse guarded row rollback before broad cutover; don't assume old Worker version remains usable after its credential expires. Current production credential expiry was checked to reported December 31, 2026, 4:47 PM GMT+7; manual renewal remains necessary. Metadata/sitemap/network/fallback/frontend and observed full-cutover counts need separate evidence. No full-cutover/14-day/retirement claim until approved completion. Existing historical R2 ADR is not superseded by preparation.
 
+## Guarded SQL preparation (one-off operator workflow)
+
+After successful full batch verification, prepare **private** SQL without connecting to any database:
+
+```bash
+node migration/product-previews/cli.mjs prepare-cutover --batch "$private/batch-01"
+```
+
+Generated `catalog-cutover/` files:
+
+- `01-preflight-readonly.sql`: read-only snapshot counts. Initial batch must show **122 expected/matching changes; 124 expected/current/matching products**. Mismatches mean stop; do not relax guards.
+- `02-cutover.sql`: **production write** of exactly 122 `product_preview_url` values. Preparation is NOT execution approval. Run only after separate owner approval in named/MFA Production SQL Editor, whole script once. Transaction takes bounded write-blocking table lock (ordinary reads continue), checks ID/slug/exact old URL/full-microsecond timestamp for all 124 rows, updates only previews, and aborts on unexpected fact/identity/kept-row mutations. Database-owned `updated_at` advances automatically; no timestamp assignments, constraints/triggers/RLS disabled, persistent schema changes, or other facts edited.
+- `03-capture-receipt-readonly.sql`: after **confirmed COMMIT**, export exactly 122 receipt rows as protected CSV. Includes old/new URL, actual after-timestamp and full-row SHA-256. Zero rows means post-state conflict, not a valid receipt. Run promptly, before more edits. If cutover times out or commit is ambiguous, inspect read-only preflight/post-state before any second write; never blindly rerun. A query result alone does not prove transaction committed.
+- `README.txt`: private operator reminders. No generated row data belongs in issues/chat/repository.
+
+Rollback SQL cannot be safely generated from pre-cutover timestamps alone. Return actual committed receipt file path, then:
+
+```bash
+chmod -N "$private/receipt.csv"
+chmod 600 "$private/receipt.csv"
+node migration/product-previews/cli.mjs prepare-rollback \
+  --batch "$private/batch-01" --receipt "$private/receipt.csv"
+```
+
+This creates private `04-rollback.sql`; **does not run it**. Only same verified 122 IDs/slugs/old/new URLs accepted. Rollback requires actual after-URL, timestamp and SHA-256 of complete current row to match receipt before **any** restore. Later edits cause all-or-none stop. Rollback restores URLs only, never prices/facts/identity/visibility or old timestamps. A newly captured receipt is a newly reviewed rollback baseline, not proof nobody edited since cutover. Preserve original committed receipt separately; do not replace it to bypass conflict guards. Application read role is not elevated and no agent DB credentials/connections exist.
+
+SQL is one-off operator automation consistent with direct named-account editing, an explicit exception to ordinary Table Editor workflow; it does not supersede historical Supabase-upload ADR/guide or implement app writes. Use exact Production project and review owner approval/risk: original-byte delivery integrity passed, but actual partner accounting, full traffic/capacity and browser/metadata/sitemap/rollback acceptance remain unresolved. Saved $0 caps may interrupt delivery; never enable paid fallback or raise limits to make this pass. Ordinary Catalog refresh remains approximately 60 seconds; no Vercel/Worker deployment.
+
+Old objects/URLs/backups retained. Preparation/COMMIT alone does not establish verified full cutover or start historical 14-day retirement period; representative frontend and guarded rollback evidence remain distinct. Production write/verification requires fresh scope, not any spent image/private API allowance.
+
 ## Offline checks
 
 ```bash
@@ -89,4 +119,4 @@ npm --prefix migration/product-previews test
 node migration/product-previews/cli.mjs
 ```
 
-Built-in Node only. No root framework/dependency/lockfile changes, database connections or real credentials in tests. Mocked tests are not live migration evidence.
+Built-in Node only; no root framework/dependency/lockfile changes or real credentials. SQL integration tests use installed `initdb`, `pg_ctl` and `psql` to start disposable PostgreSQL over owner-only Unix socket with TCP disabled and isolated environment; skipped where unavailable. No hosted database connections. Synthetic local PostgreSQL proof and mocked HTTP tests are not production cutover evidence.
