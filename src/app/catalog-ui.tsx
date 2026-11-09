@@ -395,6 +395,7 @@ export function CatalogBrowser({
               <SelectItem value="price-desc">Price: high to low</SelectItem>
               <SelectItem value="rarity-asc">Rarity: first to last</SelectItem>
               <SelectItem value="rarity-desc">Rarity: last to first</SelectItem>
+              <SelectItem value="updated-desc">Recently updated</SelectItem>
             </SelectContent>
           </Select>
         </label>

@@ -46,6 +46,7 @@ integration("disposable local Catalog database seam", () => {
       },
       designName: "Electric Bloom",
       previewUrl: null,
+      updatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
       formatOptions: [{ format: "Binder Sleeve", price: 95_000 }],
     });
     expect(products.find(({ englishCollectorNumber }) => englishCollectorNumber === "synthetic-browser-2")).toMatchObject({

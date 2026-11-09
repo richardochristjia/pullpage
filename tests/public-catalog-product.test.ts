@@ -24,6 +24,7 @@ const row = (overrides: Partial<CatalogProductRead> = {}): CatalogProductRead =>
   binderSleevePrice: 90_000,
   toploaderPrice: 120_000,
   productPreviewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/mapping/pikachu.png",
+  updatedAt: new Date("2026-02-03T04:05:06.789Z"),
   ...overrides,
 });
 
@@ -66,6 +67,7 @@ describe("public Catalog Product seam", () => {
       },
       designName: "Electric Frame",
       previewUrl: "https://res.cloudinary.com/pullpage-tests/image/upload/v1700000000/catalog-products/mapping/pikachu.png",
+      updatedAt: "2026-02-03T04:05:06.789Z",
       formatOptions: [
         { format: "Binder Sleeve", price: 90_000 },
         { format: "Toploader", price: 120_000 },

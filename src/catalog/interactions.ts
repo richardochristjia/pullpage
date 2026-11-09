@@ -11,7 +11,8 @@ export type CatalogSort =
   | "price-asc"
   | "price-desc"
   | "rarity-asc"
-  | "rarity-desc";
+  | "rarity-desc"
+  | "updated-desc";
 
 export type CatalogViewState = {
   query: string;
@@ -39,7 +40,7 @@ export const INITIAL_CATALOG_STATE: CatalogUrlState = {
 };
 
 const FORMATS: CatalogFormatFilter[] = ["any", "binder-sleeve", "toploader", "both"];
-const SORTS: CatalogSort[] = ["card-asc", "card-desc", "price-asc", "price-desc", "rarity-asc", "rarity-desc"];
+const SORTS: CatalogSort[] = ["card-asc", "card-desc", "price-asc", "price-desc", "rarity-asc", "rarity-desc", "updated-desc"];
 
 function positiveNumber(value: string | null) {
   if (value === null || value.trim() === "") return null;
@@ -182,6 +183,8 @@ export function applyCatalogView(
       case "rarity-asc":
         return (left.rarity?.displayOrder ?? Number.POSITIVE_INFINITY) -
           (right.rarity?.displayOrder ?? Number.POSITIVE_INFINITY) || slug(left, right);
+      case "updated-desc":
+        return Date.parse(right.updatedAt) - Date.parse(left.updatedAt) || cardTie(left, right);
       case "rarity-desc": {
         if (left.rarity === null) return right.rarity === null ? slug(left, right) : 1;
         if (right.rarity === null) return -1;
