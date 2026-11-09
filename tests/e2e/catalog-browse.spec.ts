@@ -186,6 +186,7 @@ test("keeps Product Details inside a portrait mobile viewport", async ({ page })
   await servePreviews(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?view=list", { waitUntil: "networkidle" });
+  await expect(page.getByRole("searchbox", { name: "Search Catalog Products" })).toBeEnabled();
   const product = page.locator("[data-product-slug]").filter({ has: page.locator("img") }).first();
   const productSlug = await product.getAttribute("data-product-slug");
   await product.focus();

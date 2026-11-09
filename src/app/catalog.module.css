@@ -1192,8 +1192,51 @@
 @media (max-width: 768px) {
   .heroCelestialOrbit,
   .heroWireframeFrame,
-  .runnerTrackWrapper {
+  .runnerTrackWrapper,
+  .cardSheen,
+  .cardHoloSheen {
     display: none;
+  }
+  .perspectiveStage {
+    height: 300px;
+    width: 100%;
+    perspective: 1200px;
+  }
+  .stageTiltWrapper {
+    width: 100%;
+    max-width: 380px;
+    height: 270px;
+  }
+  .cardSlot {
+    width: 145px;
+    height: 215px;
+    margin-left: -72px;
+  }
+  .slotLeft { transform: translateX(-75px) rotateY(-10deg) scale(0.92); }
+  .slotCenter { transform: translateX(0px) translateY(-6px) scale(1); }
+  .slotRight { transform: translateX(75px) rotateY(10deg) scale(0.92); }
+
+  .stageTiltWrapper:hover .slotLeft,
+  .stageTiltWrapper:hover .slotCenter,
+  .stageTiltWrapper:hover .slotRight,
+  .slotLeft:hover,
+  .slotCenter:hover,
+  .slotRight:hover {
+    transform: none;
+  }
+
+  .cardMetaScrim {
+    padding: 8px 10px;
+    gap: 1px;
+  }
+  .metaRarity {
+    font-size: 0.58rem;
+  }
+  .cardMetaScrim h4 {
+    font-size: 0.82rem;
+  }
+  .cardMetaScrim p {
+    font-size: 0.64rem;
   }
   .discoveryBar {
     top: 68px;
@@ -1269,23 +1312,38 @@
     word-break: break-word;
   }
   .perspectiveStage {
-    height: 220px;
+    height: 250px;
     width: 100%;
-    overflow: hidden;
+    perspective: 1000px;
   }
   .stageTiltWrapper {
     width: 100%;
-    max-width: 270px;
-    height: 200px;
+    max-width: 300px;
+    height: 230px;
   }
   .cardSlot {
-    width: 105px;
-    height: 155px;
-    margin-left: -52px;
+    width: 122px;
+    height: 180px;
+    margin-left: -61px;
+    top: 20px;
   }
-  .slotLeft { transform: translateX(-48px) rotateY(-8deg) scale(0.85); }
-  .slotCenter { transform: translateX(0px) translateY(-4px) scale(0.92); }
-  .slotRight { transform: translateX(48px) rotateY(8deg) scale(0.85); }
+  .slotLeft { transform: translateX(-56px) rotateY(-8deg) scale(0.9); }
+  .slotCenter { transform: translateX(0px) translateY(-5px) scale(0.98); }
+  .slotRight { transform: translateX(56px) rotateY(8deg) scale(0.9); }
+
+  .cardMetaScrim {
+    padding: 6px 8px;
+    gap: 1px;
+  }
+  .metaRarity {
+    font-size: 0.54rem;
+  }
+  .cardMetaScrim h4 {
+    font-size: 0.76rem;
+  }
+  .cardMetaScrim p {
+    font-size: 0.6rem;
+  }
 
   .shelfHeading {
     align-items: flex-start;
