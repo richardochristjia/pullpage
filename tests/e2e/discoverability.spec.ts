@@ -59,10 +59,14 @@ test("preserves a manual clipboard fallback for the production canonical", async
   );
 });
 
-test("renders a complete canonical route and branded miss without JavaScript", async ({ browser, page }) => {
+test("renders a complete canonical route for crawlers and a branded miss without JavaScript", async ({ browser, page }) => {
   await page.goto("/?q=pikachu");
   const href = await page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ }).getAttribute("href");
-  const noScript = await browser.newContext({ javaScriptEnabled: false });
+  // shortcut: Next.js only waits for full HTML for known bots, so a JavaScript-free browser still sees the Suspense fallback until the product page stops streaming.
+  const noScript = await browser.newContext({
+    javaScriptEnabled: false,
+    userAgent: "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+  });
   const direct = await noScript.newPage();
   await direct.goto(href!);
   await expect(direct.getByRole("heading", { level: 1, name: "Pikachu — Electric Bloom" })).toBeVisible();
