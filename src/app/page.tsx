@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogBrowser } from "./catalog-ui";
+import { HeroFan } from "./hero-fan";
 import styles from "./catalog.module.css";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -59,11 +60,8 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
     <div className={styles.catalog}>
       <SiteHeader />
       <main id="main-content">
-        <section className={styles.intro}>
-          <p className={styles.eyebrow}>The Pullpage collection</p>
-          <h1>Art that completes the page.</h1>
-          <p>Discover extended-art surrounds designed to turn a favorite Pokémon card into a full-page moment.</p>
-        </section>
+        <HeroFan />
+        <div id="catalog-anchor" />
         <Suspense fallback={<CatalogShelfLoading />}>
           <CatalogShelf searchParams={searchParams} />
         </Suspense>

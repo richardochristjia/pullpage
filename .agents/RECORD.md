@@ -43,3 +43,6 @@ Entries are added or amended **only with human approval**.
 
 - (catalog) The catalog Sort by control currently includes a Recently updated option that orders Catalog Products newest first by `updated_at`.
 - (catalog) Catalog Products with equal `updated_at` values are currently ordered by Card Name under the Recently updated sort.
+- (catalog) The catalog discovery bar provides direct filter toggles for Supported Binder Formats alongside search and sorting.
+- (catalog) Catalog filter controls for Rarity and Price range are presented in a unified slide-over drawer on all viewports.
+- (catalog) Catalog Product items display dual-format pricing indicators for Binder Sleeve and Toploader formats when both are supported.
