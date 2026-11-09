@@ -12,8 +12,9 @@ test("browses the hosted-compatible Catalog without issuing writes", async ({ pa
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", productionOrigin);
   await expect(page.getByRole("heading", { level: 1, name: "Art that completes the page." })).toBeVisible();
   await expect(page.getByRole("status")).not.toHaveText(/Loading Catalog Products/);
+  await expect(page.getByRole("searchbox", { name: "Search Catalog Products" })).toBeEnabled();
 
-  const productLinks = page.locator('a[href^="/products/"]');
+  const productLinks = page.locator("[data-product-slug]");
   if (await productLinks.count()) {
     const href = await productLinks.first().getAttribute("href");
     await productLinks.first().click();

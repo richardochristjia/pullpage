@@ -153,7 +153,8 @@
 }
 .previewModeBtnActive {
   background: var(--card);
-  color: var(--brand-cyan);
+  color: var(--foreground);
+  font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 .previewModeBtn svg {
@@ -268,7 +269,8 @@
 }
 .modalRegionalTile .regSub {
   font-size: 0.72rem;
-  color: var(--muted-foreground);
+  color: var(--foreground);
+  opacity: 0.85;
 }
 
 /* Format Selector Tiles */
@@ -287,7 +289,8 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--muted-foreground);
+  color: var(--foreground);
+  opacity: 0.85;
 }
 .modalFormatHeader small {
   font-size: 0.74rem;
@@ -437,14 +440,14 @@
   gap: 10px;
   padding: 0 18px;
   border-radius: 12px;
-  background: #25d366;
+  background: #166534;
   color: #ffffff;
   font-size: 0.95rem;
   font-weight: 750;
   text-decoration: none;
   border: none;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+  box-shadow: 0 6px 20px rgba(22, 101, 52, 0.35);
   transition: all 0.18s ease;
   white-space: nowrap;
 }
@@ -454,9 +457,9 @@
   white-space: nowrap;
 }
 .modalWhatsAppBtn:hover {
-  background: #20ba59;
+  background: #14532d;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+  box-shadow: 0 8px 24px rgba(22, 101, 52, 0.45);
   color: #ffffff;
 }
 .shareFallback {
