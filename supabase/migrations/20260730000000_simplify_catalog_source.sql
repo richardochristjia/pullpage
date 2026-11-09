@@ -175,7 +175,15 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
+-- Supabase Storage owns this table and enables RLS on it, so postgres can only verify that.
+do $$
+begin
+  if not (select relrowsecurity from pg_class where oid = 'storage.objects'::regclass) then
+    raise exception 'storage.objects must have row level security enabled';
+  end if;
+end;
+$$;
+
 drop policy if exists product_previews_public_read on storage.objects;
 create policy product_previews_public_read
 on storage.objects
