@@ -1210,9 +1210,16 @@
   .discoveryRight {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sortControl {
+    flex: 1;
+    min-width: 0;
   }
   .sortControl button {
-    min-width: 140px;
+    min-width: 0;
+    width: 100%;
   }
   .productGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1287,5 +1294,10 @@
     right: 8px;
     font-size: 0.68rem;
     padding: 3px 8px;
+  }
+  .cardPricingBlock {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 }
