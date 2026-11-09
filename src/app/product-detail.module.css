@@ -19,7 +19,7 @@
 .modalDetail {
   border: none;
   box-shadow: none;
-  max-height: min(720px, calc(100dvh - 48px));
+  height: auto;
 }
 
 /* ============================================================ */
@@ -398,12 +398,42 @@
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
+.share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.shareActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.modalCopyBtn {
+  min-height: 48px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-weight: 650;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .modalWhatsAppBtn {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 0 18px;
   border-radius: 12px;
   background: #25d366;
   color: #ffffff;
@@ -414,12 +444,26 @@
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
   transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.modalWhatsAppBtn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .modalWhatsAppBtn:hover {
   background: #20ba59;
   transform: translateY(-1px);
   box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
   color: #ffffff;
+}
+.shareFallback {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  margin-top: 4px;
 }
 .modalSecondaryActions {
   display: flex;
@@ -503,5 +547,18 @@
   .modalDossier,
   .content {
     padding: 24px 20px 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalWhatsAppBtn {
+    font-size: 0.84rem;
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .modalCopyBtn {
+    font-size: 0.84rem;
+    padding: 0 10px;
+    gap: 6px;
   }
 }

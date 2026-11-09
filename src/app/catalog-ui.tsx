@@ -142,7 +142,7 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
             <div className={styles.regionalCapsules}>
               <span
                 className={styles.regionalTag}
-                title={enPrinting ? `English Printing: ${regionalPrintingFacts(enPrinting)}` : "No English Printing"}
+                title={enPrinting ? `English Printing: ${enPrinting.collectorNumber ?? "—"}` : "No English Printing"}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                   <circle cx="12" cy="12" r="10" />
@@ -150,19 +150,19 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
                   <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                 </svg>
                 <span>
-                  <strong>EN</strong> · {enPrinting ? regionalPrintingFacts(enPrinting) : "—"}
+                  <strong>EN</strong> · {enPrinting?.collectorNumber ?? "—"}
                 </span>
               </span>
               <span
                 className={styles.regionalTag}
-                title={jpPrinting ? `Japanese Printing: ${regionalPrintingFacts(jpPrinting)}` : "No Japanese Printing"}
+                title={jpPrinting ? `Japanese Printing: ${jpPrinting.collectorNumber ?? "—"}` : "No Japanese Printing"}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
                   <circle cx="12" cy="12" r="4" fill="#dc561c" />
                 </svg>
                 <span>
-                  <strong>JP</strong> · {jpPrinting ? regionalPrintingFacts(jpPrinting) : "—"}
+                  <strong>JP</strong> · {jpPrinting?.collectorNumber ?? "—"}
                 </span>
               </span>
             </div>
