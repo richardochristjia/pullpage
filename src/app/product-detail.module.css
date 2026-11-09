@@ -235,11 +235,13 @@
 
 /* Regional Identifier Tiles */
 .modalRegionalGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 10px;
+  width: 100%;
 }
 .modalRegionalTile {
+  flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--muted);

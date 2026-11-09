@@ -38,6 +38,8 @@ export function ProductExhibitionDossier({
   const regionalPrintings = catalogProductRegionalPrintings(product);
   const enPrinting = regionalPrintings.find((p) => p.code === "EN");
   const jpPrinting = regionalPrintings.find((p) => p.code === "JP");
+  const hasEnPrinting = Boolean(enPrinting && (enPrinting.collectorNumber || enPrinting.setName));
+  const hasJpPrinting = Boolean(jpPrinting && (jpPrinting.collectorNumber || jpPrinting.setName));
 
   // Format selection
   const hasSleeve = product.formatOptions.some((opt) => opt.format.toLowerCase().includes("sleeve"));
@@ -184,33 +186,53 @@ export function ProductExhibitionDossier({
           )}
         </div>
 
-        {/* Regional Printing Spec Tiles */}
-        <div className={styles.modalRegionalGrid}>
-          <div className={styles.modalRegionalTile}>
-            <div className={styles.regHeader}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-              </svg>
-              <RegionHeading className="font-semibold text-xs tracking-wider uppercase m-0">English Printing</RegionHeading>
-            </div>
-            <span className={styles.regCode}>{enPrinting?.collectorNumber ?? "—"}</span>
-            <span className={styles.regSub}>{enPrinting?.setName ?? "—"}</span>
-          </div>
+        {/* Regional Printing Spec Tiles (Hides empty regional printings) */}
+        {hasEnPrinting || hasJpPrinting ? (
+          <div className={styles.modalRegionalGrid}>
+            {hasEnPrinting ? (
+              <div className={styles.modalRegionalTile}>
+                <div className={styles.regHeader}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  <RegionHeading className="font-semibold text-xs tracking-wider uppercase m-0">English Printing</RegionHeading>
+                </div>
+                {enPrinting?.collectorNumber ? (
+                  <span className={styles.regCode}>{enPrinting.collectorNumber}</span>
+                ) : null}
+                {enPrinting?.setName ? (
+                  <span className={styles.regSub}>{enPrinting.setName}</span>
+                ) : null}
+              </div>
+            ) : null}
 
-          <div className={styles.modalRegionalTile}>
-            <div className={styles.regHeader}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                <circle cx="12" cy="12" r="4" fill="#dc561c" />
-              </svg>
-              <RegionHeading className="font-semibold text-xs tracking-wider uppercase m-0">Japanese Printing</RegionHeading>
-            </div>
-            <span className={styles.regCode}>{jpPrinting?.collectorNumber ?? "—"}</span>
-            <span className={styles.regSub}>{jpPrinting?.setName ?? "—"}</span>
+            {hasJpPrinting ? (
+              <div className={styles.modalRegionalTile}>
+                <div className={styles.regHeader}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                    <circle cx="12" cy="12" r="4" fill="#dc561c" />
+                  </svg>
+                  <RegionHeading className="font-semibold text-xs tracking-wider uppercase m-0">Japanese Printing</RegionHeading>
+                </div>
+                {jpPrinting?.collectorNumber ? (
+                  <span className={styles.regCode}>{jpPrinting.collectorNumber}</span>
+                ) : null}
+                {jpPrinting?.setName ? (
+                  <span className={styles.regSub}>{jpPrinting.setName}</span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        </div>
+        ) : (
+          <div className={styles.modalRegionalGrid}>
+            <div className={styles.modalRegionalTile}>
+              <span className={styles.regSub}>Regional printing unknown</span>
+            </div>
+          </div>
+        )}
 
         {/* Format Selector Cards */}
         <section className={styles.modalFormatSection} aria-labelledby={`${headingId}-formats`}>
