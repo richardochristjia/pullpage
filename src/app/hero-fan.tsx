@@ -1,9 +1,102 @@
 "use client";
 
+import Link from "next/link";
 import { useRef } from "react";
 import styles from "./catalog.module.css";
 
-export function HeroFan() {
+export type HeroCardData = {
+  slug: string;
+  cardName: string;
+  rarityCode: string;
+  rarityColor?: string;
+  collectorNumber: string;
+  designName: string;
+  priceFormatted: string;
+  previewUrl: string;
+};
+
+export const DEFAULT_HERO_CARDS: [HeroCardData, HeroCardData, HeroCardData] = [
+  {
+    slug: "greninja-terastal-214-167-akagi-a9d32fdb",
+    cardName: "Greninja Terastal",
+    rarityCode: "SAR",
+    rarityColor: "#f59e0b",
+    collectorNumber: "214/167",
+    designName: "Akagi",
+    priceFormatted: "Rp 79k",
+    previewUrl: "https://pullpage-images.pullpage.workers.dev/preview-output_greninja_terastal_f-v1.png",
+  },
+  {
+    slug: "xerneas-091-086-yashiro-nanaco-896c81c8",
+    cardName: "Xerneas",
+    rarityCode: "AR",
+    rarityColor: "var(--brand-cyan)",
+    collectorNumber: "091/086",
+    designName: "Yashiro Nanaco",
+    priceFormatted: "Rp 79k",
+    previewUrl: "https://pullpage-images.pullpage.workers.dev/preview-xerneas_ar-v1.png",
+  },
+  {
+    slug: "paldean-gardevoir-233-091-kuroimori-9adeceb5",
+    cardName: "Paldean Gardevoir",
+    rarityCode: "SAR",
+    rarityColor: "#ec4899",
+    collectorNumber: "233/091",
+    designName: "Kuroimori",
+    priceFormatted: "Rp 79k",
+    previewUrl: "https://pullpage-images.pullpage.workers.dev/preview-output_paldean_gardevoir_ar_f-v1.png",
+  },
+];
+
+export function pickHeroFeaturedCards(
+  products: import("@/catalog/catalog").PublicCatalogProduct[],
+): [HeroCardData, HeroCardData, HeroCardData] {
+  const greninja = products.find((p) => p.slug.includes("greninja-terastal") || p.cardName?.toLowerCase().includes("greninja"));
+  const xerneas = products.find((p) => p.slug.includes("xerneas") || p.cardName?.toLowerCase().includes("xerneas"));
+  const gardevoir = products.find((p) => p.slug.includes("paldean-gardevoir") || p.cardName?.toLowerCase().includes("paldean gardevoir"));
+
+  const matched = [greninja, xerneas, gardevoir].filter((p): p is import("@/catalog/catalog").PublicCatalogProduct => Boolean(p));
+
+  const formatCard = (
+    p: import("@/catalog/catalog").PublicCatalogProduct,
+    fallback: HeroCardData,
+  ): HeroCardData => {
+    const minPrice = p.formatOptions.reduce((min, opt) => Math.min(min, opt.price), Infinity);
+    const priceFormatted = Number.isFinite(minPrice) ? `Rp ${Math.round(minPrice / 1000)}k` : fallback.priceFormatted;
+
+    return {
+      slug: p.slug,
+      cardName: p.cardName ?? fallback.cardName,
+      rarityCode: p.rarity?.code ?? fallback.rarityCode,
+      rarityColor: p.rarity?.badgeBackgroundColor ?? fallback.rarityColor,
+      collectorNumber: p.englishCollectorNumber ?? p.japaneseCollectorNumber ?? fallback.collectorNumber,
+      designName: p.designName ?? fallback.designName,
+      priceFormatted,
+      previewUrl: p.previewUrl ?? fallback.previewUrl,
+    };
+  };
+
+  if (matched.length === 3) {
+    return [
+      formatCard(greninja!, DEFAULT_HERO_CARDS[0]),
+      formatCard(xerneas!, DEFAULT_HERO_CARDS[1]),
+      formatCard(gardevoir!, DEFAULT_HERO_CARDS[2]),
+    ];
+  }
+
+  // If in a synthetic test environment without these cards, adapt from available active products
+  if (products.length >= 3) {
+    return [
+      formatCard(products[0], DEFAULT_HERO_CARDS[0]),
+      formatCard(products[1], DEFAULT_HERO_CARDS[1]),
+      formatCard(products[2], DEFAULT_HERO_CARDS[2]),
+    ];
+  }
+
+  return DEFAULT_HERO_CARDS;
+}
+
+export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData, HeroCardData, HeroCardData] }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tiltTicking = useRef(false);
 
@@ -115,56 +208,86 @@ export function HeroFan() {
           onMouseLeave={resetStageTilt}
         >
           <div className={styles.trio3dStage}>
-            {/* Slot 1: Left (Pikachu AR) */}
-            <div className={`${styles.cardSlot} ${styles.slotLeft}`} onClick={scrollToCatalog} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") scrollToCatalog(); }}>
+            {/* Slot 1: Left (Greninja Terastal) */}
+            <Link
+              href={`/products/${cards[0].slug}`}
+              scroll={false}
+              className={`${styles.cardSlot} ${styles.slotLeft}`}
+              aria-label={`Featured: ${cards[0].cardName} — ${cards[0].designName}`}
+            >
               <div className={`${styles.card3d} ${styles.cardFloat1}`}>
                 <div className={styles.cardSheen} />
                 <img
-                  src="https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=600&auto=format&fit=crop&q=80"
-                  alt="Pikachu Extended Art"
+                  src={cards[0].previewUrl}
+                  alt={`${cards[0].cardName} Extended Art`}
                   className={styles.card3dImg}
                 />
                 <div className={styles.cardMetaScrim}>
-                  <span className={styles.metaRarity}>AR · 151 #173</span>
-                  <h4>Pikachu</h4>
-                  <p>&ldquo;Electric Bloom&rdquo; · Rp 95k</p>
+                  <span
+                    className={styles.metaRarity}
+                    style={cards[0].rarityColor ? { color: cards[0].rarityColor } : undefined}
+                  >
+                    {cards[0].rarityCode} · #{cards[0].collectorNumber}
+                  </span>
+                  <h4>{cards[0].cardName}</h4>
+                  <p>&ldquo;{cards[0].designName}&rdquo; Edition · From {cards[0].priceFormatted}</p>
                 </div>
               </div>
-            </div>
+            </Link>
 
-            {/* Slot 2: Center (Charizard ex SAR) */}
-            <div className={`${styles.cardSlot} ${styles.slotCenter}`} onClick={scrollToCatalog} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") scrollToCatalog(); }}>
+            {/* Slot 2: Center (Xerneas) */}
+            <Link
+              href={`/products/${cards[1].slug}`}
+              scroll={false}
+              className={`${styles.cardSlot} ${styles.slotCenter}`}
+              aria-label={`Featured: ${cards[1].cardName} — ${cards[1].designName}`}
+            >
               <div className={`${styles.card3d} ${styles.cardFloat2}`}>
                 <div className={styles.cardSheen} />
                 <img
-                  src="https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80"
-                  alt="Charizard ex Extended Art"
+                  src={cards[1].previewUrl}
+                  alt={`${cards[1].cardName} Extended Art`}
                   className={styles.card3dImg}
                 />
                 <div className={styles.cardMetaScrim}>
-                  <span className={styles.metaRarity} style={{ color: "#f59e0b" }}>SAR · 151 #199</span>
-                  <h4>Charizard ex</h4>
-                  <p>&ldquo;Starlight Surge&rdquo; Edition · From Rp 50k</p>
+                  <span
+                    className={styles.metaRarity}
+                    style={cards[1].rarityColor ? { color: cards[1].rarityColor } : undefined}
+                  >
+                    {cards[1].rarityCode} · #{cards[1].collectorNumber}
+                  </span>
+                  <h4>{cards[1].cardName}</h4>
+                  <p>&ldquo;{cards[1].designName}&rdquo; Edition · From {cards[1].priceFormatted}</p>
                 </div>
               </div>
-            </div>
+            </Link>
 
-            {/* Slot 3: Right (Blastoise ex SAR) */}
-            <div className={`${styles.cardSlot} ${styles.slotRight}`} onClick={scrollToCatalog} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") scrollToCatalog(); }}>
+            {/* Slot 3: Right (Paldean Gardevoir) */}
+            <Link
+              href={`/products/${cards[2].slug}`}
+              scroll={false}
+              className={`${styles.cardSlot} ${styles.slotRight}`}
+              aria-label={`Featured: ${cards[2].cardName} — ${cards[2].designName}`}
+            >
               <div className={`${styles.card3d} ${styles.cardFloat3}`}>
                 <div className={styles.cardSheen} />
                 <img
-                  src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=600&auto=format&fit=crop&q=80"
-                  alt="Blastoise ex Extended Art"
+                  src={cards[2].previewUrl}
+                  alt={`${cards[2].cardName} Extended Art`}
                   className={styles.card3dImg}
                 />
                 <div className={styles.cardMetaScrim}>
-                  <span className={styles.metaRarity} style={{ color: "#0ea5e9" }}>SAR · 151 #200</span>
-                  <h4>Blastoise ex</h4>
-                  <p>&ldquo;Hydro Cascade&rdquo; · From Rp 50k</p>
+                  <span
+                    className={styles.metaRarity}
+                    style={cards[2].rarityColor ? { color: cards[2].rarityColor } : undefined}
+                  >
+                    {cards[2].rarityCode} · #{cards[2].collectorNumber}
+                  </span>
+                  <h4>{cards[2].cardName}</h4>
+                  <p>&ldquo;{cards[2].designName}&rdquo; Edition · From {cards[2].priceFormatted}</p>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>

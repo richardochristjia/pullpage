@@ -10,7 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogBrowser } from "./catalog-ui";
-import { HeroFan } from "./hero-fan";
+import { HeroFan, pickHeroFeaturedCards } from "./hero-fan";
 import styles from "./catalog.module.css";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -55,12 +55,25 @@ function CatalogShelfLoading() {
   );
 }
 
+async function HeroFanContainer() {
+  let cards;
+  try {
+    const products = await getCatalog();
+    cards = pickHeroFeaturedCards(products);
+  } catch {
+    cards = undefined;
+  }
+  return <HeroFan cards={cards} />;
+}
+
 export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className={styles.catalog}>
       <SiteHeader />
       <main id="main-content">
-        <HeroFan />
+        <Suspense fallback={<HeroFan />}>
+          <HeroFanContainer />
+        </Suspense>
         <div id="catalog-anchor" />
         <Suspense fallback={<CatalogShelfLoading />}>
           <CatalogShelf searchParams={searchParams} />

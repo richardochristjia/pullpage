@@ -290,7 +290,7 @@ test("keeps the responsive Catalog within narrow viewports", async ({ page }) =>
   const overflowingElements = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>("body *")]
     .filter((element) => element.getBoundingClientRect().right > window.innerWidth + 1)
     .slice(0, 10)
-    .map((element) => element.tagName.toLowerCase()));
+    .map((element) => `${element.tagName.toLowerCase()}.${element.className} (right=${Math.round(element.getBoundingClientRect().right)})`));
   expect(await overflowingElements()).toEqual([]);
 
   await page.setViewportSize({ width: 812, height: 375 });
