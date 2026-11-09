@@ -75,6 +75,12 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   expect(viewState.get("sort")).toBe("price-desc");
   expect(viewState.get("min")).toBe("70000");
   expect(viewState.get("max")).toBe("70500");
+
+  await page.getByRole("combobox", { name: "Sort by" }).click();
+  await page.getByRole("option", { name: "Recently updated" }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("sort")).toBe("updated-desc");
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Sort by" })).toContainText("Recently updated");
 });
 
 test("renders missing optional facts and excludes inactive Catalog Products", async ({ page }) => {

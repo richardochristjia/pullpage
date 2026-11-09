@@ -16,6 +16,7 @@ const baseProduct: PublicCatalogProduct = {
   rarity: null,
   designName: null,
   previewUrl: null,
+  updatedAt: "2026-01-01T00:00:00.000Z",
   formatOptions: [],
 };
 

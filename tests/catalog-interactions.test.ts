@@ -28,6 +28,7 @@ const product = (overrides: Partial<PublicCatalogProduct>): PublicCatalogProduct
   rarity: null,
   designName: null,
   previewUrl: null,
+  updatedAt: "2026-01-01T00:00:00.000Z",
   formatOptions: [{ format: "Binder Sleeve", price: 100_000 }],
   ...overrides,
 });
@@ -145,6 +146,25 @@ describe("Catalog interactions", () => {
       view: "grid",
       visibleCount: 24,
     });
+  });
+
+  test("sorts Recently updated newest first, then Card Name with null last, under filters", () => {
+    const old = "2026-01-01T00:00:00.000Z";
+    const recent = "2026-03-01T00:00:00.000Z";
+    const products = [
+      product({ slug: "old", cardName: "Aaa", updatedAt: old }),
+      product({ slug: "tie-null", cardName: null, updatedAt: recent }),
+      product({ slug: "tie-b", cardName: "Bbb", updatedAt: recent }),
+      product({ slug: "tie-a", cardName: "Abc", updatedAt: recent }),
+    ];
+    const state = { ...initialState, sort: "updated-desc" as const };
+    const urlState = { ...state, view: "grid" as const, visibleCount: 24 };
+    expect(applyCatalogView(products, state).map(({ slug }) => slug)).toEqual(["tie-a", "tie-b", "tie-null", "old"]);
+    expect(applyCatalogView(products, { ...state, query: "ab" }).map(({ slug }) => slug)).toEqual(["tie-a"]);
+    expect(catalogStateToSearchParams(urlState).get("sort")).toBe("updated-desc");
+    expect(catalogStateFromSearchParams(new URLSearchParams("sort=updated-desc")).sort).toBe("updated-desc");
+    expect(catalogStateFromSearchParams(new URLSearchParams("sort=updated-asc")).sort).toBe("card-asc");
+    expect(catalogStateToSearchParams({ ...urlState, sort: "card-asc" }).has("sort")).toBe(false);
   });
 
   test("sorts Card Name, eligible price, and configured Rarity with missing values last and stable ties", () => {

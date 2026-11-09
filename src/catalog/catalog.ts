@@ -71,6 +71,7 @@ async function queryActiveCatalogProducts(databaseUrl: string): Promise<CatalogP
         },
       },
       designName: true,
+      updatedAt: true,
       binderSleevePrice: true,
       toploaderPrice: true,
       productPreviewUrl: true,

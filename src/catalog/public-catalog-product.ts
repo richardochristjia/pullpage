@@ -28,6 +28,7 @@ export type PublicCatalogProduct = {
   rarity: PublicCatalogRarity | null;
   designName: string | null;
   previewUrl: string | null;
+  updatedAt: string;
   formatOptions: CatalogFormatOption[];
 };
 
@@ -57,6 +58,7 @@ export type CatalogProductRead = Pick<
   | "binderSleevePrice"
   | "toploaderPrice"
   | "productPreviewUrl"
+  | "updatedAt"
 > & { rarityDefinition: CatalogRarityRead | null };
 
 export function toPublicCatalogRarityFilterOption(
@@ -85,6 +87,7 @@ export function toPublicCatalogProduct(product: CatalogProductRead): PublicCatal
     rarity: product.rarityDefinition,
     designName: product.designName,
     previewUrl: product.productPreviewUrl,
+    updatedAt: product.updatedAt.toISOString(),
     formatOptions,
   };
 }
