@@ -39,7 +39,7 @@ test("uses 60-second freshness, keeps a cached Catalog during refresh failure, a
     await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]').first()).toBeAttached();
     await releaseCatalogLock();
 
-    await page.goto("/");
+    await page.goto(`/?q=${encodeURIComponent(originalName)}`);
     await expect(page.getByText(originalName, { exact: true }).first()).toBeVisible();
 
     await admin.query("update catalog_private.catalog_products set card_name = $2 where id = $1", [productId, changedName]);
