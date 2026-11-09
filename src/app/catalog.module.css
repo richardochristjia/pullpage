@@ -441,7 +441,7 @@
   bottom: calc(100% - 2px);
   left: 0;
   width: 100%;
-  height: 140px;
+  height: 70px;
   overflow: hidden;
   pointer-events: none;
   z-index: 45;
@@ -450,9 +450,9 @@
 .filterbar3dRunner {
   position: absolute;
   bottom: 0;
-  left: -120px;
-  width: 165px;
-  height: 135px;
+  left: -85px;
+  width: 84px;
+  height: 68px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -464,19 +464,22 @@
 }
 
 @keyframes runLeftToRight {
-  0% { left: -120px; opacity: 0; }
+  0% { left: -85px; opacity: 0; }
   2.5% { opacity: 1; }
   96% { opacity: 1; }
-  100% { left: calc(100% + 60px); opacity: 0; }
+  100% { left: calc(100% + 40px); opacity: 0; }
 }
 
 .runnerStage {
   position: relative;
   width: 165px;
   height: 135px;
+  transform: scale(0.5);
+  transform-origin: bottom center;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .runnerModel {
