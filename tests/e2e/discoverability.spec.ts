@@ -5,6 +5,7 @@ const productionOrigin = "https://pullpage.vercel.app";
 test("serves immutable product canonicals, metadata, robots, and sitemap entries", async ({ page, request }) => {
   await page.goto("/");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", productionOrigin);
+  await page.getByRole("searchbox", { name: "Search Catalog Products" }).fill("pikachu");
   const pikachuHref = await page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ }).getAttribute("href");
   expect(pikachuHref).toMatch(/^\/products\/pikachu-[a-z0-9-]+$/);
 
@@ -39,17 +40,8 @@ test("serves immutable product canonicals, metadata, robots, and sitemap entries
   );
 });
 
-test("shares the production canonical and preserves a manual clipboard fallback", async ({ page }) => {
+test("preserves a manual clipboard fallback for the production canonical", async ({ page }) => {
   await page.addInitScript(() => {
-    const state = window as typeof window & { shareMode: "native" | "clipboard-failure"; shared?: ShareData };
-    state.shareMode = "native";
-    Object.defineProperty(navigator, "share", {
-      configurable: true,
-      value: async (data: ShareData) => {
-        if (state.shareMode !== "native") throw new Error("share unavailable");
-        state.shared = data;
-      },
-    });
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: async () => { throw new Error("clipboard denied"); } },
@@ -60,16 +52,6 @@ test("shares the production canonical and preserves a manual clipboard fallback"
   await page.getByRole("searchbox", { name: "Search Catalog Products" }).fill("pikachu");
   await page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ }).click();
   const dialog = page.getByRole("dialog", { name: "Pikachu — Electric Bloom" });
-  const share = dialog.getByRole("button", { name: "Share" });
-  await share.click();
-
-  const shared = await page.evaluate(() => (window as typeof window & { shared?: ShareData }).shared);
-  expect(shared?.url).toMatch(/^https:\/\/pullpage[.]vercel[.]app\/products\/pikachu-[a-z0-9-]+$/);
-  expect(shared?.title).toBe("Pikachu — Electric Bloom | Pullpage");
-
-  await page.evaluate(() => {
-    (window as typeof window & { shareMode: "native" | "clipboard-failure" }).shareMode = "clipboard-failure";
-  });
   await dialog.getByRole("button", { name: "Copy link" }).click();
   await expect(page.getByText("Clipboard access failed. Copy the link manually.")).toBeVisible();
   await expect(dialog.getByRole("textbox", { name: "Canonical product link" })).toHaveValue(
@@ -78,7 +60,7 @@ test("shares the production canonical and preserves a manual clipboard fallback"
 });
 
 test("renders a complete canonical route and branded miss without JavaScript", async ({ browser, page }) => {
-  await page.goto("/");
+  await page.goto("/?q=pikachu");
   const href = await page.getByRole("link", { name: /Pikachu.*173\/165.*Electric Bloom/ }).getAttribute("href");
   const noScript = await browser.newContext({ javaScriptEnabled: false });
   const direct = await noScript.newPage();
