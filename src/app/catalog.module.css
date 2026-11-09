@@ -1188,7 +1188,8 @@
 
 @media (max-width: 768px) {
   .heroCelestialOrbit,
-  .heroWireframeFrame {
+  .heroWireframeFrame,
+  .runnerTrackWrapper {
     display: none;
   }
   .discoveryBar {

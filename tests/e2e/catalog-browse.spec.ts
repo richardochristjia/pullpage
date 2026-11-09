@@ -285,6 +285,7 @@ test("keeps the responsive Catalog within narrow viewports", async ({ page }) =>
   await filters.getByRole("button", { name: /Show \d+ products/ }).click();
   await expect(filters).toBeHidden();
   await expect.poll(() => new URL(page.url()).searchParams.get("format")).toBe("toploader");
+  await page.waitForTimeout(250);
 
   const overflowingElements = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>("body *")]
     .filter((element) => element.getBoundingClientRect().right > window.innerWidth + 1)
