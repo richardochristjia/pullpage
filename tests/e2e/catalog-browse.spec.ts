@@ -18,9 +18,11 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   await page.getByRole("button", { name: "Load more Catalog Products" }).click();
   await expect(page.locator("[data-product-slug]")).toHaveCount(48);
 
-  await page.getByRole("button", { name: "Collapse catalog filters" }).click();
-  await expect(page.getByRole("button", { name: "Expand catalog filters" })).toBeVisible();
-  await page.getByRole("button", { name: "Expand catalog filters" }).click();
+  await page.getByRole("button", { name: "Filters" }).click();
+  const filtersDrawer = page.getByRole("dialog", { name: "Filter Catalog Products" });
+  await expect(filtersDrawer).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(filtersDrawer).toBeHidden();
 
   const gridView = page.getByRole("radio", { name: "Grid view" });
   const listView = page.getByRole("radio", { name: "List view" });
@@ -56,18 +58,22 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByRole("status")).toHaveText("480 results");
 
-  const artRare = page.getByRole("checkbox", { name: /AR.*Art Rare.*56 products/ });
-  const tripleRare = page.getByRole("checkbox", { name: /RRR.*Triple Rare.*0 products/ });
+  await page.getByRole("button", { name: "Filters" }).click();
+  const filtersModal = page.getByRole("dialog", { name: "Filter Catalog Products" });
+  const artRare = filtersModal.getByRole("checkbox", { name: /AR.*Art Rare.*56 products/ });
+  const tripleRare = filtersModal.getByRole("checkbox", { name: /RRR.*Triple Rare.*0 products/ });
   await expect(artRare).toBeEnabled();
   await expect(tripleRare).toBeDisabled();
-  const tripleRareBadge = page.locator('[data-slot="tooltip-trigger"][aria-label="RRR — Triple Rare"]');
+  const tripleRareBadge = filtersModal.locator('[data-slot="tooltip-trigger"][aria-label="RRR — Triple Rare"]');
   await expect(tripleRareBadge.locator("[data-slot=badge]")).toHaveCSS("background-color", "rgb(237, 233, 254)");
   await tripleRareBadge.hover();
   await expect(page.getByRole("tooltip")).toHaveText("Triple Rare");
   await artRare.check();
-  await page.getByRole("radio", { name: "Toploader" }).click();
-  await page.getByRole("spinbutton", { name: "Minimum" }).fill("70000");
-  await page.getByRole("spinbutton", { name: "Maximum" }).fill("70500");
+  await filtersModal.getByRole("radio", { name: "Toploader" }).click();
+  await filtersModal.getByRole("spinbutton", { name: "Minimum" }).fill("70000");
+  await filtersModal.getByRole("spinbutton", { name: "Maximum" }).fill("70500");
+  await filtersModal.getByRole("button", { name: /Show \d+ products/ }).click();
+  await expect(filtersModal).toBeHidden();
   await expect(page.getByRole("status")).not.toHaveText("0 results");
   await page.getByRole("combobox", { name: "Sort by" }).click();
   await page.getByRole("option", { name: "Price: high to low" }).click();

@@ -94,7 +94,7 @@ export function HeroFan() {
       <div className={styles.heroTextBlock}>
         <span className={styles.heroBadgePill}>✨ The Pullpage Collection</span>
         <h1 className={styles.heroHeadline}>
-          Art that completes <br /><span className={styles.cyanSpark}>the whole page.</span>
+          Art that completes <br /><span className={styles.cyanSpark}>the page.</span>
         </h1>
         <p className={styles.heroDesc}>
           Discover extended-art surrounds designed to turn a favorite Pokémon card into a full-page moment. Measured to 0.1mm tolerance for Binder Sleeves and Toploaders.
