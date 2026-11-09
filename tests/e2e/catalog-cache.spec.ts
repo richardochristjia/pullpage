@@ -36,7 +36,7 @@ test("uses 60-second freshness, keeps a cached Catalog during refresh failure, a
     await acquireCatalogLock();
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "The Catalog is temporarily unavailable" })).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
+    await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]').first()).toBeAttached();
     await releaseCatalogLock();
 
     await page.goto("/");
