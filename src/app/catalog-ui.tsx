@@ -22,7 +22,6 @@ import {
 } from "@/catalog/interactions";
 import { displayCatalogValue } from "@/catalog/presentation";
 import { catalogProductRegionalPrintings, regionalPrintingFacts } from "@/catalog/regional-printing";
-import { isHttpsProductPreview } from "@/catalog/product-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,7 +33,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import styles from "./catalog.module.css";
 import { PokemonRunner } from "./pokemon-runner";
-import { ProductPlaceholder } from "./product-placeholder";
+import { ProductPreview } from "./product-preview";
 import { RarityBadge, rarityDescription, rarityDisplayLabel } from "./rarity-badge";
 
 const idr = new Intl.NumberFormat("id-ID", {
@@ -121,16 +120,13 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
     >
       <article className={view === "grid" ? styles.curatorCard : styles.productRow}>
         <div className={styles.cardPreviewFrame}>
-          {product.previewUrl && isHttpsProductPreview(product.previewUrl) ? (
-            <img
-              src={product.previewUrl}
-              alt={`${cardName} Extended Art`}
-              className={styles.cardPreviewImg}
-              loading="lazy"
-            />
-          ) : (
-            <ProductPlaceholder />
-          )}
+          <ProductPreview
+            url={product.previewUrl}
+            alt={`${cardName} Extended Art`}
+            sizes={view === "grid"
+              ? "(max-width: 520px) 44vw, (max-width: 980px) 30vw, 280px"
+              : "(max-width: 640px) 84px, 112px"}
+          />
           <div className={styles.cardHoloSheen} />
           <FloatingRarityBadge rarity={product.rarity} />
         </div>

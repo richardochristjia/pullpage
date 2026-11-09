@@ -75,34 +75,36 @@ export function PokemonRunner() {
         src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
         strategy="afterInteractive"
       />
-      <div
-        ref={runnerRef}
-        className={styles.filterbar3dRunner}
-        title="⚡ 3D Pokémon companions running across the shelf"
-        aria-hidden="true"
-      >
-        <div className={styles.runnerStage}>
-          {RUNNER_MODELS.map((model, idx) => (
-            <model-viewer
-              key={model.id}
-              id={`runner-${model.id}`}
-              class={`${styles.runnerModel} ${idx === activeIndex ? styles.runnerModelActive : ""}`}
-              src={model.src}
-              alt={`${model.name} Running`}
-              animation-name="run"
-              autoplay
-              camera-orbit={model.cameraOrbit}
-              camera-target={model.cameraTarget}
-              field-of-view={model.fieldOfView}
-              disable-zoom
-              disable-pan
-              interaction-prompt="none"
-              shadow-intensity="0"
-              exposure="0.98"
-              style={{ transform: `translateY(${model.translateY})` }}
-            />
-          ))}
-          <div className={styles.runnerContactShadow} />
+      <div className={styles.runnerTrackWrapper}>
+        <div
+          ref={runnerRef}
+          className={styles.filterbar3dRunner}
+          title="⚡ 3D Pokémon companions running across the shelf"
+          aria-hidden="true"
+        >
+          <div className={styles.runnerStage}>
+            {RUNNER_MODELS.map((model, idx) => (
+              <model-viewer
+                key={model.id}
+                id={`runner-${model.id}`}
+                class={`${styles.runnerModel} ${idx === activeIndex ? styles.runnerModelActive : ""}`}
+                src={model.src}
+                alt={`${model.name} Running`}
+                animation-name="run"
+                autoplay
+                camera-orbit={model.cameraOrbit}
+                camera-target={model.cameraTarget}
+                field-of-view={model.fieldOfView}
+                disable-zoom
+                disable-pan
+                interaction-prompt="none"
+                shadow-intensity="0"
+                exposure="0.98"
+                style={{ transform: `translateY(${model.translateY})` }}
+              />
+            ))}
+            <div className={styles.runnerContactShadow} />
+          </div>
         </div>
       </div>
     </>
