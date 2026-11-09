@@ -8,7 +8,7 @@ set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
 -- Let the migration owner dismantle objects previously isolated under recovery roles.
-revoke catalog_editor, catalog_recovery_operator, catalog_audit_owner from postgres;
+grant catalog_editor, catalog_recovery_operator, catalog_audit_owner to postgres with inherit true;
 reassign owned by catalog_editor, catalog_recovery_operator, catalog_audit_owner to postgres;
 drop owned by catalog_editor, catalog_recovery_operator, catalog_audit_owner;
 
