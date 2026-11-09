@@ -292,15 +292,15 @@
 /* Base Resting Positions */
 .slotLeft {
   z-index: 10;
-  transform: translateX(-110px) rotateY(-14deg) rotateZ(-3deg) translateZ(0px);
+  transform: translateX(-110px) rotateY(-14deg) rotateZ(-3deg) translateZ(-10px);
 }
 .slotCenter {
   z-index: 20;
-  transform: translateX(0px) translateY(-10px) rotateY(0deg) translateZ(45px) scale(1.04);
+  transform: translateX(0px) translateY(-10px) rotateY(0deg) translateZ(55px) scale(1.04);
 }
 .slotRight {
   z-index: 10;
-  transform: translateX(110px) rotateY(14deg) rotateZ(3deg) translateZ(0px);
+  transform: translateX(110px) rotateY(14deg) rotateZ(3deg) translateZ(-10px);
 }
 
 /* Smooth Stage Hover Fan Out */
@@ -1161,24 +1161,40 @@
     height: 260px;
     margin-left: -85px;
   }
-  .slotLeft { transform: translateX(-90px) rotateY(-12deg) scale(0.92); }
-  .slotCenter { transform: translateX(0px) translateY(-8px) scale(1); }
-  .slotRight { transform: translateX(90px) rotateY(12deg) scale(0.92); }
+  .slotLeft {
+    z-index: 10;
+    transform: translateX(-100px) rotateY(-12deg) rotateZ(-2.5deg) translateZ(-10px) scale(0.94);
+  }
+  .slotCenter {
+    z-index: 20;
+    transform: translateX(0px) translateY(-10px) rotateY(0deg) translateZ(50px) scale(1.04);
+  }
+  .slotRight {
+    z-index: 10;
+    transform: translateX(100px) rotateY(12deg) rotateZ(2.5deg) translateZ(-10px) scale(0.94);
+  }
 
   .stageTiltWrapper:hover .slotLeft {
-    transform: translateX(-130px) rotateY(-8deg) scale(0.95);
+    transform: translateX(-145px) rotateY(-8deg) rotateZ(-1deg) translateZ(15px) scale(0.96);
   }
   .stageTiltWrapper:hover .slotCenter {
-    transform: translateX(0px) translateY(-16px) scale(1.05);
+    transform: translateX(0px) translateY(-20px) rotateY(0deg) translateZ(65px) scale(1.08);
   }
   .stageTiltWrapper:hover .slotRight {
-    transform: translateX(130px) rotateY(8deg) scale(0.95);
+    transform: translateX(145px) rotateY(8deg) rotateZ(1deg) translateZ(15px) scale(0.96);
   }
 
-  .slotLeft:hover,
-  .slotCenter:hover,
+  .slotLeft:hover {
+    z-index: 60 !important;
+    transform: translateX(-145px) translateY(-28px) rotateY(0deg) rotateZ(0deg) translateZ(95px) scale(1.12) !important;
+  }
+  .slotCenter:hover {
+    z-index: 60 !important;
+    transform: translateX(0px) translateY(-30px) rotateY(0deg) rotateZ(0deg) translateZ(105px) scale(1.14) !important;
+  }
   .slotRight:hover {
-    transform: scale(1.08) translateY(-20px) !important;
+    z-index: 60 !important;
+    transform: translateX(145px) translateY(-28px) rotateY(0deg) rotateZ(0deg) translateZ(95px) scale(1.12) !important;
   }
 
   .productRow {
@@ -1195,13 +1211,11 @@
 @media (max-width: 768px) {
   .heroCelestialOrbit,
   .heroWireframeFrame,
-  .runnerTrackWrapper,
-  .cardSheen,
-  .cardHoloSheen {
+  .runnerTrackWrapper {
     display: none;
   }
   .perspectiveStage {
-    height: 300px;
+    height: 310px;
     width: 100%;
     perspective: 1200px;
   }
@@ -1215,17 +1229,40 @@
     height: 215px;
     margin-left: -72px;
   }
-  .slotLeft { transform: translateX(-75px) rotateY(-10deg) scale(0.92); }
-  .slotCenter { transform: translateX(0px) translateY(-6px) scale(1); }
-  .slotRight { transform: translateX(75px) rotateY(10deg) scale(0.92); }
+  .slotLeft {
+    z-index: 10;
+    transform: translateX(-80px) rotateY(-11deg) rotateZ(-2.5deg) translateZ(-10px) scale(0.93);
+  }
+  .slotCenter {
+    z-index: 20;
+    transform: translateX(0px) translateY(-8px) rotateY(0deg) translateZ(45px) scale(1.04);
+  }
+  .slotRight {
+    z-index: 10;
+    transform: translateX(80px) rotateY(11deg) rotateZ(2.5deg) translateZ(-10px) scale(0.93);
+  }
 
-  .stageTiltWrapper:hover .slotLeft,
-  .stageTiltWrapper:hover .slotCenter,
-  .stageTiltWrapper:hover .slotRight,
-  .slotLeft:hover,
-  .slotCenter:hover,
+  .stageTiltWrapper:hover .slotLeft {
+    transform: translateX(-110px) rotateY(-7deg) rotateZ(-1deg) translateZ(15px) scale(0.96);
+  }
+  .stageTiltWrapper:hover .slotCenter {
+    transform: translateX(0px) translateY(-16px) rotateY(0deg) translateZ(50px) scale(1.06);
+  }
+  .stageTiltWrapper:hover .slotRight {
+    transform: translateX(110px) rotateY(7deg) rotateZ(1deg) translateZ(15px) scale(0.96);
+  }
+
+  .slotLeft:hover {
+    z-index: 60 !important;
+    transform: translateX(-110px) translateY(-22px) rotateY(0deg) rotateZ(0deg) translateZ(75px) scale(1.1) !important;
+  }
+  .slotCenter:hover {
+    z-index: 60 !important;
+    transform: translateX(0px) translateY(-24px) rotateY(0deg) rotateZ(0deg) translateZ(85px) scale(1.12) !important;
+  }
   .slotRight:hover {
-    transform: none;
+    z-index: 60 !important;
+    transform: translateX(110px) translateY(-22px) rotateY(0deg) rotateZ(0deg) translateZ(75px) scale(1.1) !important;
   }
 
   .cardMetaScrim {
@@ -1315,24 +1352,56 @@
     word-break: break-word;
   }
   .perspectiveStage {
-    height: 250px;
+    height: 260px;
     width: 100%;
     perspective: 1000px;
   }
   .stageTiltWrapper {
     width: 100%;
-    max-width: 300px;
-    height: 230px;
+    max-width: 320px;
+    height: 240px;
   }
   .cardSlot {
     width: 122px;
     height: 180px;
     margin-left: -61px;
-    top: 20px;
+    top: 18px;
   }
-  .slotLeft { transform: translateX(-56px) rotateY(-8deg) scale(0.9); }
-  .slotCenter { transform: translateX(0px) translateY(-5px) scale(0.98); }
-  .slotRight { transform: translateX(56px) rotateY(8deg) scale(0.9); }
+  .slotLeft {
+    z-index: 10;
+    transform: translateX(-58px) rotateY(-10deg) rotateZ(-2deg) translateZ(-8px) scale(0.93);
+  }
+  .slotCenter {
+    z-index: 20;
+    transform: translateX(0px) translateY(-8px) rotateY(0deg) translateZ(40px) scale(1.04);
+  }
+  .slotRight {
+    z-index: 10;
+    transform: translateX(58px) rotateY(10deg) rotateZ(2deg) translateZ(-8px) scale(0.93);
+  }
+
+  .stageTiltWrapper:hover .slotLeft {
+    transform: translateX(-78px) rotateY(-6deg) rotateZ(-1deg) translateZ(14px) scale(0.95);
+  }
+  .stageTiltWrapper:hover .slotCenter {
+    transform: translateX(0px) translateY(-14px) rotateY(0deg) translateZ(42px) scale(1.06);
+  }
+  .stageTiltWrapper:hover .slotRight {
+    transform: translateX(78px) rotateY(6deg) rotateZ(1deg) translateZ(14px) scale(0.95);
+  }
+
+  .slotLeft:hover {
+    z-index: 60 !important;
+    transform: translateX(-78px) translateY(-16px) rotateY(0deg) rotateZ(0deg) translateZ(55px) scale(1.08) !important;
+  }
+  .slotCenter:hover {
+    z-index: 60 !important;
+    transform: translateX(0px) translateY(-18px) rotateY(0deg) rotateZ(0deg) translateZ(60px) scale(1.1) !important;
+  }
+  .slotRight:hover {
+    z-index: 60 !important;
+    transform: translateX(78px) translateY(-16px) rotateY(0deg) rotateZ(0deg) translateZ(55px) scale(1.08) !important;
+  }
 
   .cardMetaScrim {
     padding: 6px 8px;
