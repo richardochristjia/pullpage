@@ -137,42 +137,43 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
             <p className={styles.cardDesign}>&ldquo;{product.designName}&rdquo; Edition</p>
           ) : null}
 
-          {/* Equal-Width Side-by-Side EN/JP Regional Capsules */}
-          {regionalPrintings.length > 0 ? (
+          {/* EN/JP Regional Capsules (Hides empty regional numbers) */}
+          {enPrinting?.collectorNumber || jpPrinting?.collectorNumber ? (
             <div className={styles.regionalCapsules}>
-              <span
-                className={styles.regionalTag}
-                title={enPrinting ? `English Printing: ${enPrinting.collectorNumber ?? "—"}` : "No English Printing"}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-                <span>
-                  <strong>EN</strong> · {enPrinting?.collectorNumber ?? "—"}
+              {enPrinting?.collectorNumber ? (
+                <span
+                  className={styles.regionalTag}
+                  title={`English Printing: ${enPrinting.collectorNumber}`}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  <span>
+                    <strong>EN</strong> · {enPrinting.collectorNumber}
+                  </span>
                 </span>
-              </span>
-              <span
-                className={styles.regionalTag}
-                title={jpPrinting ? `Japanese Printing: ${jpPrinting.collectorNumber ?? "—"}` : "No Japanese Printing"}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                  <circle cx="12" cy="12" r="4" fill="#dc561c" />
-                </svg>
-                <span>
-                  <strong>JP</strong> · {jpPrinting?.collectorNumber ?? "—"}
+              ) : null}
+              {jpPrinting?.collectorNumber ? (
+                <span
+                  className={styles.regionalTag}
+                  title={`Japanese Printing: ${jpPrinting.collectorNumber}`}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                    <circle cx="12" cy="12" r="4" fill="#dc561c" />
+                  </svg>
+                  <span>
+                    <strong>JP</strong> · {jpPrinting.collectorNumber}
+                  </span>
                 </span>
-              </span>
+              ) : null}
             </div>
           ) : (
             <div className={styles.regionalCapsules}>
               <span className={styles.regionalTag}>
                 <span>Regional printing unknown</span>
-              </span>
-              <span className={styles.regionalTag}>
-                <span>—</span>
               </span>
             </div>
           )}

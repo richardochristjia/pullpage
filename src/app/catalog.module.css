@@ -284,6 +284,9 @@
   will-change: transform;
   cursor: pointer;
   outline: none;
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 /* Base Resting Positions */
@@ -840,13 +843,13 @@
 
 /* Equal-Width Side-by-Side EN/JP Capsules */
 .regionalCapsules {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
   gap: 8px;
   margin-top: 4px;
   width: 100%;
 }
 .regionalTag {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
