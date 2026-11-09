@@ -149,12 +149,7 @@ export function ProductExhibitionDossier({
                 <span>View full image</span>
               </button>
             </DialogTrigger>
-            <DialogContent
-              className={styles.lightboxContent}
-              onEscapeKeyDown={(event) => {
-                event.stopImmediatePropagation();
-              }}
-            >
+            <DialogContent className={styles.lightboxContent}>
               <DialogHeader className="sr-only">
                 <DialogTitle>Full Product Preview</DialogTitle>
                 <DialogDescription>Complete uncropped Product Preview. Use native browser zoom gestures to inspect it.</DialogDescription>
