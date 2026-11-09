@@ -841,7 +841,7 @@
 /* Equal-Width Side-by-Side EN/JP Capsules */
 .regionalCapsules {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 4px;
   width: 100%;
@@ -861,11 +861,18 @@
   letter-spacing: -0.01em;
   line-height: 1;
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   transition: all 0.15s ease;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.regionalTag span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .regionalTag:hover {
   border-color: color-mix(in srgb, var(--brand-cyan) 40%, var(--border));

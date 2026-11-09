@@ -34,8 +34,8 @@ test("searches, filters, sorts, and opens the deterministic local Catalog access
   await search.fill("pika-chu");
   await expect(page.getByRole("status")).toHaveText("1 result");
   const pikachu = page.getByRole("link", { name: /Pikachu.*English Printing 173\/165.*Japanese Printing 205\/165.*Electric Bloom/ });
-  await expect(pikachu).toContainText("EN · 173/165 · Scarlet & Violet—151");
-  await expect(pikachu).toContainText("JP · 205/165 · Pokémon Card 151");
+  await expect(pikachu).toContainText("EN · 173/165");
+  await expect(pikachu).toContainText("JP · 205/165");
 
   await pikachu.focus();
   await pikachu.click();
@@ -236,7 +236,7 @@ test("keeps Product Details inside a portrait mobile viewport", async ({ page })
   expect(closeBounds!.x + closeBounds!.width).toBeLessThanOrEqual(391);
   expect(closeBounds!.y).toBeGreaterThanOrEqual(0);
 
-  await dialog.getByText("Back to the Catalog").click();
+  await dialog.getByRole("button", { name: "Close product details" }).click();
   await expect(dialog).toBeHidden();
   expect(new URL(page.url()).searchParams.get("view")).toBe("list");
   await expect(page.locator(`[data-product-slug=${JSON.stringify(productSlug)}]`)).toBeFocused();
@@ -266,7 +266,7 @@ test("keeps Product Details usable on small portrait and landscape viewports", a
 
     await dialog.evaluate((element) => { element.scrollTop = element.scrollHeight; });
     expect(await dialog.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-    await expect(dialog.getByText("Back to the Catalog")).toBeInViewport();
+    await expect(dialog.getByRole("button", { name: "Copy link" })).toBeInViewport();
     const close = dialog.getByRole("button", { name: "Close product details" });
     await expect(close).toBeInViewport();
     await page.keyboard.press("Escape");

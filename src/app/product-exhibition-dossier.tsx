@@ -7,7 +7,7 @@ import type { PublicCatalogProduct } from "@/catalog/catalog";
 import { displayCatalogValue } from "@/catalog/presentation";
 import { catalogProductRegionalPrintings } from "@/catalog/regional-printing";
 import { isHttpsProductPreview } from "@/catalog/product-preview";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductPlaceholder } from "./product-placeholder";
 import { ShareProduct } from "./share-product";
 import styles from "./product-detail.module.css";
@@ -167,7 +167,16 @@ export function ProductExhibitionDossier({
       <div className={styles.modalDossier}>
         <div className={styles.modalEyebrow}>Pullpage Archive · Extended Art Collection</div>
         <div className={styles.modalTitleWrap}>
-          <Heading id={headingId}>{cardHeading}</Heading>
+          {modal ? (
+            <>
+              <Heading id={headingId}>{cardName}</Heading>
+              {product.designName && (
+                <p className={styles.modalDesignMoniker}>&ldquo;{product.designName}&rdquo; Edition</p>
+              )}
+            </>
+          ) : (
+            <Heading id={headingId}>{cardHeading}</Heading>
+          )}
         </div>
 
         {/* Regional Printing Spec Tiles */}
@@ -202,7 +211,6 @@ export function ProductExhibitionDossier({
         <section className={styles.modalFormatSection} aria-labelledby={`${headingId}-formats`}>
           <div className={styles.modalFormatHeader}>
             <span id={`${headingId}-formats`}>Supported Binder Formats</span>
-            <small>Measured to 0.1mm tolerance</small>
           </div>
           <div className={styles.modalFormatOptions} role="radiogroup" aria-label="Format Selection">
             {product.formatOptions.map((opt) => {
@@ -236,14 +244,8 @@ export function ProductExhibitionDossier({
                   </div>
                   <div className={styles.fmtDetails}>
                     <span className={styles.fmtTitle}>
-                      {isToploader ? "Rigid Toploader Case" : "Standard Binder Sleeve"}
+                      {isToploader ? "Toploader" : "Binder Sleeve"}
                     </span>
-                    <span className={styles.fmtDesc}>
-                      {isToploader ? "Impact & dust protection · Stand-ready display" : "9-pocket album fit · Exact card silhouette"}
-                    </span>
-                    <small className={styles.fmtSpec}>
-                      {isToploader ? "35pt rigid encasing · Beveled acrylic frame" : "64 × 89mm · Ultra-clear polypropylene"}
-                    </small>
                   </div>
                   <div className={styles.fmtPriceWrap}>
                     <span className={styles.fmtPrice}>{idr.format(opt.price)}</span>
@@ -276,21 +278,14 @@ export function ProductExhibitionDossier({
             )}
           </ShareProduct>
 
-          <div className={styles.modalSecondaryActions}>
-            {modal ? (
-              <DialogClose asChild>
-                <button type="button" className={styles.modalSubBtn}>
-                  <ArrowLeft width={14} height={14} aria-hidden="true" />
-                  <span>Back to the Catalog</span>
-                </button>
-              </DialogClose>
-            ) : (
+          {!modal && (
+            <div className={styles.modalSecondaryActions}>
               <Link className={styles.modalSubBtn} href="/">
                 <ArrowLeft width={14} height={14} aria-hidden="true" />
                 <span>Back to the Catalog</span>
               </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </article>

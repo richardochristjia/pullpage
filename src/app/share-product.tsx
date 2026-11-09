@@ -32,10 +32,15 @@ export function ShareProduct({ canonical, children }: {
   return (
     <div className={styles.share}>
       <div className={styles.shareActions}>
-        {children}
-        <Button type="button" variant="outline" onClick={copy}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={copy}
+          className={styles.modalCopyBtn}
+        >
           <Copy aria-hidden="true" /> Copy link
         </Button>
+        {children}
       </div>
       {showFallback && (
         <label className={styles.shareFallback}>
