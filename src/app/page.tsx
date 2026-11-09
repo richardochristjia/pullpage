@@ -56,6 +56,7 @@ function CatalogShelfLoading() {
 }
 
 async function HeroFanContainer() {
+  await connection();
   let cards;
   try {
     const products = await getCatalog();
