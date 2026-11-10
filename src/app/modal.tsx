@@ -22,9 +22,9 @@ export function ProductModal({ children, slug, title }: {
     background?.setAttribute("inert", "");
     return () => {
       background?.removeAttribute("inert");
-      if (invokingPreview) {
-        invokingPreview.style.viewTransitionName = "";
-      }
+      document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]').forEach((el) => {
+        el.style.viewTransitionName = "";
+      });
       const fallback = document.querySelector<HTMLElement>('[role="searchbox"]');
       requestAnimationFrame(() => (invokingLink?.isConnected ? invokingLink : fallback)?.focus());
     };
