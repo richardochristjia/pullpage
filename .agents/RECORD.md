@@ -46,3 +46,5 @@ Entries are added or amended **only with human approval**.
 - (catalog) The catalog discovery bar provides direct filter toggles for Supported Binder Formats alongside search and sorting.
 - (catalog) Catalog filter controls for Rarity and Price range are presented in a unified slide-over drawer on all viewports.
 - (catalog) Catalog Product items display dual-format pricing indicators for Binder Sleeve and Toploader formats when both are supported.
+- (catalog) The catalog interface coordinates state transitions with physics-based spring easing and respects prefers-reduced-motion preferences.
+- (catalog) Catalog Product preview cards transition into product detail views with shared-element view transitions.

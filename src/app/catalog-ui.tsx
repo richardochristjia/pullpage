@@ -55,6 +55,7 @@ type ProductItemProps = {
   product: PublicCatalogProduct;
   view: CatalogUrlState["view"];
   format: CatalogFormatFilter;
+  index?: number;
 };
 
 function numberOrNull(value: string) {
@@ -92,7 +93,7 @@ function FloatingRarityBadge({ rarity }: { rarity: PublicCatalogProduct["rarity"
   );
 }
 
-function CatalogProductItem({ product, view, format }: ProductItemProps) {
+function CatalogProductItem({ product, view, format, index }: ProductItemProps) {
   const cardName = displayCatalogValue(product.cardName, "No Name");
   const regionalPrintings = catalogProductRegionalPrintings(product);
   const regionalIdentity = regionalPrintings.length > 0
@@ -108,15 +109,29 @@ function CatalogProductItem({ product, view, format }: ProductItemProps) {
   const sleeveOption = product.formatOptions.find((opt) => opt.format.toLowerCase().includes("sleeve"));
   const toploaderOption = product.formatOptions.find((opt) => opt.format.toLowerCase().includes("toploader"));
 
+  function handleProductClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        return;
+      }
+      const preview = e.currentTarget.querySelector<HTMLElement>(`.${styles.cardPreviewFrame}`);
+      if (preview) {
+        preview.style.viewTransitionName = "card-preview-active";
+      }
+    }
+  }
+
   return (
     <Link
       className={styles.productLink}
+      style={{ "--sibling-index": (index ?? 0) % 12 } as React.CSSProperties}
       href={`/products/${product.slug}`}
       scroll={false}
       prefetch={false}
       aria-label={accessibleName}
       data-product-slug={product.slug}
       data-view={view}
+      onClick={handleProductClick}
     >
       <article className={view === "grid" ? styles.curatorCard : styles.productRow}>
         <div className={styles.cardPreviewFrame}>
@@ -669,12 +684,13 @@ export function CatalogBrowser({
                 Showing {rendered.length} of {visible.length}
               </div>
               <div className={state.view === "grid" ? styles.productGrid : styles.productList}>
-                {rendered.map((product) => (
+                {rendered.map((product, idx) => (
                   <CatalogProductItem
                     key={product.slug}
                     product={product}
                     view={state.view}
                     format={state.format}
+                    index={idx}
                   />
                 ))}
               </div>
