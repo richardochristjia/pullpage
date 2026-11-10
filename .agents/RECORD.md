@@ -48,3 +48,5 @@ Entries are added or amended **only with human approval**.
 - (catalog) Catalog Product items display dual-format pricing indicators for Binder Sleeve and Toploader formats when both are supported.
 - (catalog) The catalog interface coordinates state transitions with physics-based spring easing and respects prefers-reduced-motion preferences.
 - (catalog) Catalog Product preview cards transition into product detail views with shared-element view transitions.
+- (catalog) The full-preview lightbox loads the original Product Preview file.
+- (catalog) The 3D companion runner renders one self-hosted model at a time and pauses while off-screen.
