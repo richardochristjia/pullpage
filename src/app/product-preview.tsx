@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { isHttpsProductPreview } from "@/catalog/product-preview";
+import { isHttpsProductPreview, isOptimizablePreview } from "@/catalog/product-preview";
 import styles from "./catalog.module.css";
 import { ProductPlaceholder } from "./product-placeholder";
 
@@ -10,6 +10,7 @@ type ProductPreviewProps = {
   url: string | null;
   alt: string;
   sizes: string;
+  original?: boolean;
 };
 
 type PreviewDelivery = {
@@ -17,7 +18,7 @@ type PreviewDelivery = {
   status: "loaded" | "failed";
 };
 
-export function ProductPreview({ url, alt, sizes }: ProductPreviewProps) {
+export function ProductPreview({ url, alt, sizes, original }: ProductPreviewProps) {
   const [delivery, setDelivery] = useState<PreviewDelivery | null>(null);
   const deliveryStatus = delivery?.url === url ? delivery.status : "loading";
 
@@ -28,7 +29,7 @@ export function ProductPreview({ url, alt, sizes }: ProductPreviewProps) {
       <Image
         className={styles.previewImage}
         src={url}
-        unoptimized
+        unoptimized={original || !isOptimizablePreview(url)}
         alt={alt}
         fill
         sizes={sizes}

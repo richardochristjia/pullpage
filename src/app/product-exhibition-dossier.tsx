@@ -1,12 +1,13 @@
 "use client";
 
 import { ArrowLeft, Check, Maximize2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import type { PublicCatalogProduct } from "@/catalog/catalog";
 import { displayCatalogValue } from "@/catalog/presentation";
 import { catalogProductRegionalPrintings } from "@/catalog/regional-printing";
-import { isHttpsProductPreview } from "@/catalog/product-preview";
+import { isHttpsProductPreview, isOptimizablePreview } from "@/catalog/product-preview";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductPlaceholder } from "./product-placeholder";
 import { ShareProduct } from "./share-product";
@@ -92,10 +93,14 @@ export function ProductExhibitionDossier({
           className={`${styles.modalCardFrame} ${previewMode === "toploader" ? styles.toploaderCasing : ""}`}
         >
           {product.previewUrl && isHttpsProductPreview(product.previewUrl) ? (
-            <img
+            <Image
               src={product.previewUrl}
               alt={cardName}
               className={`${styles.modalCardImg} rounded-lg`}
+              width={280}
+              height={350}
+              sizes="280px"
+              unoptimized={!isOptimizablePreview(product.previewUrl)}
             />
           ) : (
             <ProductPlaceholder />
@@ -155,6 +160,7 @@ export function ProductExhibitionDossier({
                 <DialogDescription>Complete uncropped Product Preview. Use native browser zoom gestures to inspect it.</DialogDescription>
               </DialogHeader>
               <div className={styles.lightboxImage}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- the full view must load the original file */}
                 <img src={product.previewUrl} alt={cardName} className="rounded-lg max-h-[85vh] w-auto object-contain" />
               </div>
               <p className={styles.zoomHint}>Complete image · Pinch or use browser zoom to inspect details</p>
