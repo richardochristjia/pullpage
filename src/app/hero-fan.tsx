@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { isOptimizablePreview } from "@/catalog/product-preview";
 import styles from "./catalog.module.css";
 
 export type HeroCardData = {
@@ -99,6 +101,16 @@ export function pickHeroFeaturedCards(
 export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData, HeroCardData, HeroCardData] }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const tiltTicking = useRef(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [offScreen, setOffScreen] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setOffScreen(!entry.isIntersecting));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   function handleStageTilt(e: React.MouseEvent<HTMLDivElement>) {
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -137,7 +149,7 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
   }
 
   return (
-    <section className={styles.heroSplitSection}>
+    <section ref={sectionRef} className={styles.heroSplitSection} data-offscreen={offScreen || undefined}>
       {/* Animated Hero Background Graphics & Depth Layer */}
       <div className={styles.heroBgGraphics} aria-hidden="true">
         {/* 1. Technical Curator Matrix Grid */}
@@ -218,10 +230,14 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
             >
               <div className={`${styles.card3d} ${styles.cardFloat1}`}>
                 <div className={styles.cardSheen} />
-                <img
+                <Image
                   src={cards[0].previewUrl}
                   alt={`${cards[0].cardName} Extended Art`}
                   className={styles.card3dImg}
+                  width={220}
+                  height={320}
+                  sizes="220px"
+                  unoptimized={!isOptimizablePreview(cards[0].previewUrl)}
                 />
                 <div className={styles.cardMetaScrim}>
                   <span
@@ -245,10 +261,15 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
             >
               <div className={`${styles.card3d} ${styles.cardFloat2}`}>
                 <div className={styles.cardSheen} />
-                <img
+                <Image
                   src={cards[1].previewUrl}
                   alt={`${cards[1].cardName} Extended Art`}
                   className={styles.card3dImg}
+                  width={220}
+                  height={320}
+                  sizes="220px"
+                  unoptimized={!isOptimizablePreview(cards[1].previewUrl)}
+                  preload
                 />
                 <div className={styles.cardMetaScrim}>
                   <span
@@ -272,10 +293,14 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
             >
               <div className={`${styles.card3d} ${styles.cardFloat3}`}>
                 <div className={styles.cardSheen} />
-                <img
+                <Image
                   src={cards[2].previewUrl}
                   alt={`${cards[2].cardName} Extended Art`}
                   className={styles.card3dImg}
+                  width={220}
+                  height={320}
+                  sizes="220px"
+                  unoptimized={!isOptimizablePreview(cards[2].previewUrl)}
                 />
                 <div className={styles.cardMetaScrim}>
                   <span

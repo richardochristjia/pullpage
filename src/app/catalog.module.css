@@ -34,6 +34,13 @@
   z-index: 1;
 }
 
+/* Hero animations idle while the hero is scrolled out of view. */
+.heroSplitSection[data-offscreen],
+.heroSplitSection[data-offscreen] *,
+.heroSplitSection[data-offscreen] *::before {
+  animation-play-state: paused !important;
+}
+
 /* 1.1 Technical Curator Matrix Grid */
 .heroGridMatrix {
   position: absolute;
@@ -52,22 +59,22 @@
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(55px);
+  margin: -55px; /* grow the box by what the removed blur used to spread */
 }
 .heroBlobCyan {
   top: 10%;
   right: 12%;
-  width: 440px;
-  height: 440px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brand-cyan) 22%, transparent) 0%, transparent 70%);
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--brand-cyan) 22%, transparent) 0%, transparent 100%);
   animation: driftBlobCyan 16s ease-in-out infinite alternate;
 }
 .heroBlobOrange {
   bottom: 5%;
   right: 32%;
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(220, 86, 28, 0.16) 0%, transparent 70%);
+  width: 430px;
+  height: 430px;
+  background: radial-gradient(closest-side, rgba(220, 86, 28, 0.16) 0%, transparent 100%);
   animation: driftBlobOrange 13s ease-in-out infinite alternate;
 }
 @keyframes driftBlobCyan {
@@ -362,20 +369,30 @@
 .cardSheen {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.cardSheen::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 250%;
+  height: 250%;
   background: linear-gradient(
     135deg,
     transparent 35%,
     rgba(255, 255, 255, 0.28) 50%,
     transparent 65%
   );
-  background-size: 250% 250%;
   animation: sweepSheen 5s infinite;
-  pointer-events: none;
-  z-index: 5;
+  will-change: transform;
 }
+/* Same path the old background-position sweep took, moved on the compositor. */
 @keyframes sweepSheen {
-  0% { background-position: 200% 200%; }
-  35%, 100% { background-position: -100% -100%; }
+  0% { transform: translate(-120%, -120%); }
+  35%, 100% { transform: translate(60%, 60%); }
 }
 
 .cardMetaScrim {
@@ -445,6 +462,11 @@
   overflow: hidden;
   pointer-events: none;
   z-index: 45;
+  container-type: size;
+}
+
+.runnerPaused .filterbar3dRunner {
+  animation-play-state: paused;
 }
 
 .filterbar3dRunner {
@@ -460,14 +482,15 @@
   user-select: none;
   pointer-events: none;
   animation: runLeftToRight 18s linear infinite;
-  will-change: left;
+  will-change: transform;
 }
 
+/* 125px = the old end (100% + 40px) minus the -85px start, measured against the track width. */
 @keyframes runLeftToRight {
-  0% { left: -85px; opacity: 0; }
+  0% { transform: translateX(0); opacity: 0; }
   2.5% { opacity: 1; }
   96% { opacity: 1; }
-  100% { left: calc(100% + 40px); opacity: 0; }
+  100% { transform: translateX(calc(100cqw + 125px)); opacity: 0; }
 }
 
 .runnerStage {
@@ -491,15 +514,7 @@
   background: transparent;
   outline: none;
   pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
   filter: saturate(1.4) contrast(1.08) brightness(1.02);
-  transition: opacity 0.25s ease;
-}
-
-.runnerModelActive {
-  opacity: 1;
-  visibility: visible;
 }
 
 .runnerContactShadow {
@@ -767,7 +782,6 @@
   position: relative;
   transition: transform 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.25s ease, box-shadow 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1));
   box-shadow: 0 10px 28px rgb(var(--shadow-color) / 6%);
-  will-change: transform;
 }
 .productLink:hover .curatorCard {
   transform: translateY(-8px) scale(1.015);
@@ -828,7 +842,6 @@
   border-radius: 999px;
   background: rgba(14, 26, 36, 0.82);
   color: #fff;
-  backdrop-filter: blur(8px);
   display: inline-flex;
   align-items: center;
   gap: 5px;
