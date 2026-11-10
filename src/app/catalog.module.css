@@ -255,7 +255,7 @@
   width: 580px;
   height: 380px;
   transform-style: preserve-3d;
-  transition: transform 0.15s ease-out;
+  transition: transform 0.22s var(--spring-smooth, ease-out);
   will-change: transform;
 }
 
@@ -280,7 +280,7 @@
   height: 320px;
   margin-left: -110px;
   transform-style: preserve-3d;
-  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), z-index 0.2s;
+  transition: transform 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1)), z-index 0.2s;
   will-change: transform;
   cursor: pointer;
   outline: none;
@@ -634,16 +634,19 @@
   font-weight: 650;
   color: var(--muted-foreground);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.2s ease, background-color 0.25s var(--spring-smooth, ease), box-shadow 0.25s var(--spring-smooth, ease), transform 0.2s var(--spring-smooth, ease);
   white-space: nowrap;
 }
 .formatPill:hover {
   color: var(--foreground);
 }
+.formatPill:active {
+  transform: scale(0.96);
+}
 .formatPillActive {
   background: var(--card);
   color: var(--brand-cyan);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 12px color-mix(in srgb, var(--brand-cyan) 16%, transparent);
 }
 
 .discoveryRight {
@@ -726,6 +729,17 @@
 }
 .productList { display: grid; gap: 14px; }
 
+@keyframes shelfItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .productLink {
   display: block;
   min-width: 0;
@@ -733,6 +747,8 @@
   color: inherit;
   text-decoration: none;
   outline: none;
+  animation: shelfItemFadeIn 0.45s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  animation-delay: calc(var(--sibling-index, 0) * 35ms);
 }
 .productLink:focus-visible {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--ring) 55%, transparent);
@@ -749,13 +765,14 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.25s ease, box-shadow 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1));
   box-shadow: 0 10px 28px rgb(var(--shadow-color) / 6%);
+  will-change: transform;
 }
 .productLink:hover .curatorCard {
-  transform: translateY(-4px);
+  transform: translateY(-8px) scale(1.015);
   border-color: var(--brand-cyan);
-  box-shadow: 0 16px 36px rgb(var(--shadow-color) / 14%);
+  box-shadow: 0 20px 48px rgb(var(--shadow-color) / 16%), 0 0 20px color-mix(in srgb, var(--brand-cyan) 18%, transparent);
 }
 
 .cardPreviewFrame {
@@ -769,10 +786,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.35s ease;
+  transition: transform 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .productLink:hover .cardPreviewImg {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
 .cardHoloSheen {
@@ -780,16 +797,16 @@
   inset: 0;
   background: linear-gradient(
     115deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.3) 45%,
-    rgba(8, 123, 148, 0.25) 55%,
-    rgba(220, 86, 28, 0.2) 65%,
-    transparent 80%
+    transparent 15%,
+    rgba(255, 255, 255, 0.38) 45%,
+    color-mix(in srgb, var(--brand-cyan) 35%, transparent) 55%,
+    rgba(220, 86, 28, 0.25) 65%,
+    transparent 85%
   );
   background-size: 250% 250%;
   background-position: 150% 150%;
   opacity: 0;
-  transition: opacity 0.3s ease, background-position 0.6s ease;
+  transition: opacity 0.35s ease, background-position 0.75s var(--spring-smooth, ease-out);
   pointer-events: none;
   mix-blend-mode: overlay;
   z-index: 2;
@@ -971,12 +988,12 @@
   border-radius: 18px;
   background: var(--card);
   box-shadow: 0 10px 28px rgb(var(--shadow-color) / 6%);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: border-color 0.25s ease, box-shadow 0.45s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1)), transform 0.45s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .productLink:hover .productRow {
   border-color: var(--brand-cyan);
-  box-shadow: 0 14px 34px rgb(var(--shadow-color) / 12%);
-  transform: translateY(-2px);
+  box-shadow: 0 16px 38px rgb(var(--shadow-color) / 12%), 0 0 16px color-mix(in srgb, var(--brand-cyan) 14%, transparent);
+  transform: translateX(4px);
 }
 .productRow .cardPreviewFrame {
   height: 100%;
@@ -1443,5 +1460,25 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .productLink {
+    animation: none !important;
+  }
+  .curatorCard,
+  .productLink:hover .curatorCard,
+  .cardPreviewImg,
+  .productLink:hover .cardPreviewImg,
+  .cardHoloSheen,
+  .productRow,
+  .productLink:hover .productRow,
+  .formatPill,
+  .trio3dStage,
+  .cardSlot {
+    transform: none !important;
+    transition-duration: 0.01ms !important;
+    animation: none !important;
   }
 }

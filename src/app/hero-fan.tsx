@@ -101,6 +101,9 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
   const tiltTicking = useRef(false);
 
   function handleStageTilt(e: React.MouseEvent<HTMLDivElement>) {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
     if (tiltTicking.current) return;
     tiltTicking.current = true;
     requestAnimationFrame(() => {
@@ -109,6 +112,7 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
         tiltTicking.current = false;
         return;
       }
+      wrapper.style.transition = "transform 0.22s var(--spring-smooth, ease-out)";
       const rect = wrapper.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
       const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -120,11 +124,8 @@ export function HeroFan({ cards = DEFAULT_HERO_CARDS }: { cards?: [HeroCardData,
   function resetStageTilt() {
     const wrapper = stageRef.current;
     if (wrapper) {
-      wrapper.style.transition = "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)";
+      wrapper.style.transition = "transform 0.65s var(--spring-smooth, cubic-bezier(0.16, 1, 0.3, 1))";
       wrapper.style.transform = "rotateY(0deg) rotateX(0deg)";
-      setTimeout(() => {
-        if (wrapper) wrapper.style.transition = "transform 0.15s ease-out";
-      }, 600);
     }
   }
 
