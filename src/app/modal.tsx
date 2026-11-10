@@ -18,16 +18,34 @@ export function ProductModal({ children, slug, title }: {
   useEffect(() => {
     const background = document.querySelector("#app-content");
     const invokingLink = document.querySelector<HTMLElement>(`[data-product-slug="${CSS.escape(slug)}"]`);
+    const invokingPreview = invokingLink?.querySelector<HTMLElement>(`[class*="cardPreviewFrame"]`);
     background?.setAttribute("inert", "");
     return () => {
       background?.removeAttribute("inert");
+      if (invokingPreview) {
+        invokingPreview.style.viewTransitionName = "";
+      }
       const fallback = document.querySelector<HTMLElement>('[role="searchbox"]');
       requestAnimationFrame(() => (invokingLink?.isConnected ? invokingLink : fallback)?.focus());
     };
   }, [slug]);
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      if (typeof document !== "undefined" && "startViewTransition" in document) {
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          document.startViewTransition(() => {
+            router.back();
+          });
+          return;
+        }
+      }
+      router.back();
+    }
+  };
+
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) router.back(); }}>
+    <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent
         className={styles.dialog}
         showCloseButton={false}
