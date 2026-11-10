@@ -7,7 +7,8 @@ const onePixelPng = Buffer.from(
 );
 
 function servePreviews(page: Page) {
-  return page.route("https://res.cloudinary.com/**", (route) =>
+  // Allowlisted previews go through /_next/image, whose server-side fetch the browser cannot intercept.
+  return page.route("**/_next/image?**", (route) =>
     route.fulfill({ status: 200, contentType: "image/png", body: onePixelPng }));
 }
 
@@ -100,9 +101,9 @@ test("renders missing optional facts and excludes inactive Catalog Products", as
   await expect(page.getByText("Inactive Browser Fixture")).toHaveCount(0);
 });
 
-test("delivers an HTTPS Product Preview directly and falls back after failed delivery", async ({ page }) => {
+test("delivers an allowlisted Product Preview through the image optimizer and falls back after failed delivery", async ({ page }) => {
   const previewRequests: string[] = [];
-  await page.route("https://res.cloudinary.com/**", async (route) => {
+  await page.route("**/_next/image?**", async (route) => {
     previewRequests.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "image/png", body: onePixelPng });
   });
@@ -115,13 +116,13 @@ test("delivers an HTTPS Product Preview directly and falls back after failed del
   await expect(image).toBeVisible();
   await expect(image).toHaveCSS("object-fit", "contain");
   const source = await image.getAttribute("src");
-  expect(source).toMatch(/^https:\/\/res[.]cloudinary[.]com\//);
-  expect(source).not.toContain("/_next/image");
-  expect(previewRequests).toEqual([source]);
+  expect(source).toContain("/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2F");
+  expect(previewRequests.length).toBeGreaterThan(0);
+  for (const requested of previewRequests) expect(requested).toContain("/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2F");
 
-  await page.unroute("https://res.cloudinary.com/**");
+  await page.unroute("**/_next/image?**");
   let failedAttempts = 0;
-  await page.route("https://res.cloudinary.com/**", async (route) => {
+  await page.route("**/_next/image?**", async (route) => {
     failedAttempts += 1;
     await route.abort("blockedbyclient");
   });
@@ -142,7 +143,7 @@ test("keeps a Product Preview that loaded before hydration", async ({ page }) =>
   });
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  const preview = page.locator('img[src^="https://"]:not([src*="/_next/image"])').first();
+  const preview = page.locator('img[src*="/_next/image"]').first();
   await preview.waitFor({ state: "attached" });
   await expect.poll(() => preview.evaluate((image) => {
     const previewImage = image as HTMLImageElement;
@@ -160,7 +161,7 @@ test("keeps a successfully loaded Product Preview after a late error", async ({ 
   await servePreviews(page);
   await page.goto("/");
   await page.waitForLoadState("networkidle");
-  const preview = page.locator('img[src^="https://"]:not([src*="/_next/image"])').first();
+  const preview = page.locator('img[src*="/_next/image"]').first();
   await preview.waitFor({ state: "visible" });
   await expect.poll(() => preview.evaluate((image) => {
     const previewImage = image as HTMLImageElement;

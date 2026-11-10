@@ -24,7 +24,7 @@ export function ProductPreviewLightbox({ url, alt }: { url: string | null; alt: 
               <DialogDescription>Complete uncropped Product Preview. Use native browser zoom gestures to inspect it.</DialogDescription>
             </DialogHeader>
             <div className={styles.lightboxImage}>
-              <ProductPreview url={url} alt={alt} sizes="90vw" />
+              <ProductPreview url={url} alt={alt} sizes="90vw" original />
             </div>
             <p className={styles.zoomHint}>Complete image · Pinch or use browser zoom to inspect details</p>
           </DialogContent>
