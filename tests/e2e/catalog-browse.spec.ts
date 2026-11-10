@@ -102,8 +102,11 @@ test("renders missing optional facts and excludes inactive Catalog Products", as
 });
 
 test("delivers an allowlisted Product Preview through the image optimizer and falls back after failed delivery", async ({ page }) => {
+  // Only Cloudinary previews: the hero's Worker-hosted images also go through /_next/image.
+  const cloudinaryPreview = (url: URL) =>
+    url.pathname === "/_next/image" && url.searchParams.get("url")?.startsWith("https://res.cloudinary.com/") === true;
   const previewRequests: string[] = [];
-  await page.route("**/_next/image?**", async (route) => {
+  await page.route(cloudinaryPreview, async (route) => {
     previewRequests.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "image/png", body: onePixelPng });
   });
@@ -117,12 +120,12 @@ test("delivers an allowlisted Product Preview through the image optimizer and fa
   await expect(image).toHaveCSS("object-fit", "contain");
   const source = await image.getAttribute("src");
   expect(source).toContain("/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2F");
-  expect(previewRequests.length).toBeGreaterThan(0);
-  for (const requested of previewRequests) expect(requested).toContain("/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2F");
+  // The browser requests the srcset candidate it picked, which can differ from src.
+  expect(previewRequests).toEqual([await image.evaluate((img) => (img as HTMLImageElement).currentSrc)]);
 
-  await page.unroute("**/_next/image?**");
+  await page.unroute(cloudinaryPreview);
   let failedAttempts = 0;
-  await page.route("**/_next/image?**", async (route) => {
+  await page.route(cloudinaryPreview, async (route) => {
     failedAttempts += 1;
     await route.abort("blockedbyclient");
   });
