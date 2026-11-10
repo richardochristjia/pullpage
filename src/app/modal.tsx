@@ -18,7 +18,6 @@ export function ProductModal({ children, slug, title }: {
   useEffect(() => {
     const background = document.querySelector("#app-content");
     const invokingLink = document.querySelector<HTMLElement>(`[data-product-slug="${CSS.escape(slug)}"]`);
-    const invokingPreview = invokingLink?.querySelector<HTMLElement>(`[class*="cardPreviewFrame"]`);
     background?.setAttribute("inert", "");
     return () => {
       background?.removeAttribute("inert");
