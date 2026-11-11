@@ -549,7 +549,8 @@
     padding: 24px 20px;
   }
   .modalCardFrame {
-    width: 190px;
+    width: min(100%, 440px);
+    width: min(100%, 440px, 56dvh);
   }
   .modalDossier,
   .content {

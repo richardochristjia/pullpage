@@ -99,7 +99,7 @@ export function ProductExhibitionDossier({
               className={`${styles.modalCardImg} rounded-lg`}
               width={280}
               height={350}
-              sizes="280px"
+              sizes="(max-width: 800px) 440px, 280px"
               unoptimized={!isOptimizablePreview(product.previewUrl)}
             />
           ) : (
